@@ -858,7 +858,14 @@ export default function Page() {
                           width={64}
                           tickFormatter={(v: number) => formatAxisTickTop(v)}
                         />
+                        {/* filterNull={false}: recharts gates the tooltip on a
+                            non-empty payload, so a chart whose series are all
+                            null on the hovered date (e.g. annual GDP mid-year)
+                            would never activate the tooltip at all. Keeping
+                            the null entries lets OverlayTooltip run and show
+                            each series' last known value. */}
                         <Tooltip
+                          filterNull={false}
                           content={
                             <OverlayTooltip
                               bases={groups.combined.bases}
@@ -1017,7 +1024,11 @@ export default function Page() {
                       width={64}
                       tickFormatter={(v: number) => formatAxisTick(g.id, v)}
                     />
+                    {/* filterNull={false}: see the top chart's Tooltip — without
+                        it, a chart whose series are all null on the hovered
+                        date never activates the tooltip. */}
                     <Tooltip
+                      filterNull={false}
                       content={
                         <OverlayTooltip
                           bases={g.bases}
