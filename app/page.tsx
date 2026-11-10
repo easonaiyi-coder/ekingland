@@ -13,13 +13,10 @@ import {
   YAxis,
 } from "recharts";
 
+// API returns slim rows: date + close only (the chart plots close).
 type Row = {
   date: string;
-  open: number | null;
-  high: number | null;
-  low: number | null;
   close: number | null;
-  volume: number | null;
 };
 
 type Series = {
@@ -266,6 +263,13 @@ function OverlayTooltip({ active, payload, label }: any) {
 export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Log scale by default; the toggle also shows the normal linear axis.
+  const [logScale, setLogScale] = useState(true);
+  const [progress, setProgress] = useState<{
+    loaded: number;
+    total: number | null;
+    phase: string;
+  } | null>(null);
   const [rangeIdx, setRangeIdx] = useState(6);
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
@@ -303,14 +307,56 @@ export default function Page() {
     });
   }
 
+  // Streaming fetch with real progress (bytes received vs content-length
+  // when the server sends one), a 90s timeout, and a retry on failure.
+  async function loadData() {
+    setError(null);
+    setProgress({ loaded: 0, total: null, phase: "正在下载数据" });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 90000);
+    try {
+      const r = await fetch("/api/market", { signal: ctrl.signal });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const total = Number(r.headers.get("content-length")) || null;
+      const reader = r.body?.getReader();
+      if (!reader) {
+        const d = (await r.json()) as MarketData;
+        setData(d);
+        setProgress(null);
+        return;
+      }
+      const chunks: Uint8Array[] = [];
+      let loaded = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          loaded += value.length;
+          setProgress({ loaded, total, phase: "正在下载数据" });
+        }
+      }
+      setProgress({ loaded, total, phase: "正在解析数据" });
+      const buf = new Uint8Array(loaded);
+      let off = 0;
+      for (const c of chunks) {
+        buf.set(c, off);
+        off += c.length;
+      }
+      const d = JSON.parse(new TextDecoder().decode(buf)) as MarketData;
+      setData(d);
+      setProgress(null);
+    } catch (e: any) {
+      if (e?.name === "AbortError") setError("加载超时（90秒），请重试。");
+      else setError(String(e?.message || e));
+      setProgress(null);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   useEffect(() => {
-    fetch("/api/market")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(setData)
-      .catch((e) => setError(String(e.message || e)));
+    loadData();
   }, []);
 
   const days = RANGES[rangeIdx].days;
@@ -386,6 +432,31 @@ export default function Page() {
                 ))}
               </div>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-400">纵轴</span>
+              <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+                <button
+                  onClick={() => setLogScale(true)}
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                    logScale
+                      ? "bg-slate-900 text-white shadow"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  对数
+                </button>
+                <button
+                  onClick={() => setLogScale(false)}
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                    !logScale
+                      ? "bg-slate-900 text-white shadow"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  线性
+                </button>
+              </div>
+            </div>
             <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
               {RANGES.map((r, i) => (
                 <button
@@ -406,12 +477,46 @@ export default function Page() {
 
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
-            数据加载失败：{error}。请刷新页面重试。
+            数据加载失败：{error}
+            <button
+              onClick={loadData}
+              className="ml-2 rounded-lg border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+            >
+              重试
+            </button>
           </div>
         )}
         {!data && !error && (
           <div className="rounded-xl border border-slate-200 bg-white px-5 py-16 text-center text-sm text-slate-500">
-            数据加载中…
+            <div className="mx-auto max-w-sm">
+              <div className="mb-2 font-medium text-slate-700">
+                {progress ? progress.phase : "正在加载数据…"}
+                {progress?.total
+                  ? ` ${Math.round((progress.loaded / progress.total) * 100)}%`
+                  : ""}
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full bg-slate-900 transition-all ${
+                    progress?.total ? "" : "animate-pulse"
+                  }`}
+                  style={{
+                    width: progress?.total
+                      ? `${Math.min(100, (progress.loaded / progress.total) * 100)}%`
+                      : "100%",
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-xs text-slate-400">
+                {progress
+                  ? `已下载 ${(progress.loaded / 1048576).toFixed(1)} MB${
+                      progress.total
+                        ? ` / ${(progress.total / 1048576).toFixed(1)} MB`
+                        : ""
+                    }`
+                  : "正在连接…"}
+              </div>
+            </div>
           </div>
         )}
 
@@ -479,7 +584,8 @@ export default function Page() {
                     <YAxis
                       tick={{ fontSize: 11, fill: "#64748b" }}
                       domain={["auto", "auto"]}
-                      width={44}
+                      scale={logScale ? "log" : "linear"}
+                      width={52}
                     />
                     <Tooltip content={<OverlayTooltip />} />
                     {visibleKeys.map(({ key, color }) => (

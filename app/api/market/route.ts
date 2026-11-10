@@ -49,6 +49,83 @@ const UA =
 
 const CACHE_TTL = 6 * 3600 * 1000;
 let cache: { at: number; data: unknown } | null = null;
+let refreshing = false;
+
+// Slim rows for the wire: the chart only plots date + close.
+// Full OHLCV stays in the bundled files and the live fetch; only the
+// response is slimmed (13.3MB -> ~4MB).
+function slim(rows: { date: string; close: number | null }[]) {
+  return rows.map((r) => ({ date: r.date, close: r.close }));
+}
+
+async function buildData() {
+  const series: Record<string, unknown> = {};
+  const stale: string[] = [];
+  await Promise.all(
+    SERIES.map(async (s) => {
+      try {
+        const rows =
+          s.source === "eastmoney"
+            ? await fetchCsi300()
+            : s.source === "worldbank"
+              ? await fetchWorldBank(s.symbol)
+              : await fetchYahoo(s.symbol);
+        series[s.key] = {
+          key: s.key,
+          symbol: s.symbol,
+          name: s.name,
+          currency: s.currency,
+          rows: slim(rows),
+        };
+      } catch {
+        stale.push(s.key);
+        const b = bundled(s.key);
+        series[s.key] = { ...b, rows: slim(b.rows) };
+      }
+    })
+  );
+  let events: unknown[] = [];
+  try {
+    const p = path.join(process.cwd(), "public", "data", "events.json");
+    events = JSON.parse(fs.readFileSync(p, "utf-8")).events;
+  } catch {
+    events = [];
+  }
+  return {
+    series,
+    events,
+    updatedAt: new Date().toISOString(),
+    stale,
+    range: { start: START, end: new Date().toISOString().slice(0, 10) },
+  };
+}
+
+async function refreshCache() {
+  const data = await buildData();
+  cache = { at: Date.now(), data };
+  return data;
+}
+
+export async function GET() {
+  if (cache && Date.now() - cache.at < CACHE_TTL) {
+    return NextResponse.json(cache.data);
+  }
+  if (cache) {
+    // Stale: answer immediately with the old data and refresh behind it,
+    // so no visitor ever waits on a full upstream refresh.
+    if (!refreshing) {
+      refreshing = true;
+      refreshCache()
+        .catch(() => {})
+        .finally(() => {
+          refreshing = false;
+        });
+    }
+    return NextResponse.json(cache.data);
+  }
+  const data = await refreshCache();
+  return NextResponse.json(data);
+}
 
 async function fetchJson(url: string, timeoutMs = 20000) {
   const ctrl = new AbortController();
@@ -142,50 +219,4 @@ async function fetchWorldBank(code: string) {
   }
   rows.sort((a, b) => (a.date < b.date ? -1 : 1));
   return rows;
-}
-
-export async function GET() {
-  if (cache && Date.now() - cache.at < CACHE_TTL) {
-    return NextResponse.json(cache.data);
-  }
-  const series: Record<string, unknown> = {};
-  const stale: string[] = [];
-  await Promise.all(
-    SERIES.map(async (s) => {
-      try {
-        const rows =
-          s.source === "eastmoney"
-            ? await fetchCsi300()
-            : s.source === "worldbank"
-              ? await fetchWorldBank(s.symbol)
-              : await fetchYahoo(s.symbol);
-        series[s.key] = {
-          key: s.key,
-          symbol: s.symbol,
-          name: s.name,
-          currency: s.currency,
-          rows,
-        };
-      } catch {
-        stale.push(s.key);
-        series[s.key] = bundled(s.key);
-      }
-    })
-  );
-  let events: unknown[] = [];
-  try {
-    const p = path.join(process.cwd(), "public", "data", "events.json");
-    events = JSON.parse(fs.readFileSync(p, "utf-8")).events;
-  } catch {
-    events = [];
-  }
-  const data = {
-    series,
-    events,
-    updatedAt: new Date().toISOString(),
-    stale,
-    range: { start: START, end: new Date().toISOString().slice(0, 10) },
-  };
-  cache = { at: Date.now(), data };
-  return NextResponse.json(data);
 }
