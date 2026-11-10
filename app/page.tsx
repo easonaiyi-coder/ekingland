@@ -63,6 +63,26 @@ const OVERLAY: { key: string; color: string }[] = [
   { key: "usdhkd", color: "#a3e635" },
 ];
 
+const CATEGORIES: { id: string; label: string; keys: string[] }[] = [
+  {
+    id: "stocks",
+    label: "股市",
+    keys: ["sp500", "nasdaq", "dow", "nikkei", "hsi", "sse", "csi300"],
+  },
+  {
+    id: "fx",
+    label: "外汇",
+    keys: ["usdcny", "usdjpy", "cnyjpy", "eurusd", "gbpusd", "usdhkd", "dxy"],
+  },
+  { id: "metals", label: "贵金属", keys: ["gold"] },
+];
+
+// auto-categorize: anything not listed above falls into 其他
+function categoryOf(key: string): string {
+  const c = CATEGORIES.find((c) => c.keys.includes(key));
+  return c ? c.id : "other";
+}
+
 const RANGES = [
   { label: "1个月", days: 22 },
   { label: "3个月", days: 66 },
@@ -153,6 +173,31 @@ export default function Page() {
   const [rangeIdx, setRangeIdx] = useState(3);
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
+  const [visibleCats, setVisibleCats] = useState<Set<string>>(
+    new Set(["stocks", "fx", "metals", "other"])
+  );
+
+  // categories actually present (其他 only shows when something is uncategorized)
+  const presentCats = useMemo(() => {
+    const ids = new Set(OVERLAY.map((o) => categoryOf(o.key)));
+    const list = CATEGORIES.filter((c) => ids.has(c.id));
+    if (ids.has("other")) list.push({ id: "other", label: "其他", keys: [] });
+    return list;
+  }, []);
+
+  const visibleKeys = useMemo(
+    () => OVERLAY.filter((o) => visibleCats.has(categoryOf(o.key))),
+    [visibleCats]
+  );
+
+  function toggleCat(id: string) {
+    setVisibleCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     fetch("/api/market")
@@ -192,14 +237,14 @@ export default function Page() {
       if (!row) row = overlay.merged[overlay.merged.length - 1];
       if (!row) continue;
       let max = -Infinity;
-      for (const { key } of OVERLAY) {
+      for (const { key } of visibleKeys) {
         const v = (row as any)[key];
         if (typeof v === "number") max = Math.max(max, v);
       }
       if (max !== -Infinity) m.set(e.date, max);
     }
     return m;
-  }, [overlay, dotEvents]);
+  }, [overlay, dotEvents, visibleKeys]);
 
   const lastDate = overlay?.lastDate ?? "";
 
@@ -261,8 +306,25 @@ export default function Page() {
                   {showEvents ? "隐藏事件" : "事件列表"}
                 </button>
               </div>
+              <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                <span className="text-slate-500">显示：</span>
+                {presentCats.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex cursor-pointer items-center gap-1.5 text-slate-600"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={visibleCats.has(c.id)}
+                      onChange={() => toggleCat(c.id)}
+                      className="h-3.5 w-3.5 accent-slate-900"
+                    />
+                    {c.label}
+                  </label>
+                ))}
+              </div>
               <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                {OVERLAY.map(({ key, color }) => (
+                {visibleKeys.map(({ key, color }) => (
                   <span key={key} className="flex items-center gap-1.5">
                     <span
                       className="inline-block h-2 w-2 rounded-full"
@@ -288,7 +350,7 @@ export default function Page() {
                       width={44}
                     />
                     <Tooltip content={<OverlayTooltip />} />
-                    {OVERLAY.map(({ key, color }) => (
+                    {visibleKeys.map(({ key, color }) => (
                       <Line
                         key={key}
                         type="monotone"
