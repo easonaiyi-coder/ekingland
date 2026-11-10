@@ -400,7 +400,7 @@ export default function Page() {
 
   return (
     <main className="min-h-screen bg-[#f3f5f8] text-slate-900">
-      <div className="mx-auto max-w-[1400px] px-4 py-5">
+      <div className="mx-auto w-full max-w-[3600px] px-4 py-5">
         {/* header */}
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div>
@@ -567,7 +567,7 @@ export default function Page() {
                     </span>
                   ))}
               </div>
-              <div className="h-[380px] w-full">
+              <div className="h-[480px] w-full md:h-[600px] xl:h-[680px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={overlay.merged} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke="#e8ecf1" strokeDasharray="3 3" />
