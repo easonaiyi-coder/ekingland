@@ -4,7 +4,7 @@
     "end": "2026-11-10"
   },
   "source": "Yahoo Finance chart API",
-  "fetched_at": "2026-11-10T11:43:19.771012+00:00",
+  "fetched_at": "2026-11-10T14:12:49.632746+00:00",
   "symbols": {
     "sp500": {
       "symbol": "^GSPC",
@@ -225,6 +225,22 @@
       "last": "2025-12-31",
       "file": "data/gdp_wld.json",
       "source": "World Bank"
+    },
+    "silver": {
+      "symbol": "SI=F",
+      "name": "白银期货",
+      "rows": 6573,
+      "first": "2000-08-30",
+      "last": "2026-11-09",
+      "file": "data/silver.json"
+    },
+    "copper": {
+      "symbol": "HG=F",
+      "name": "铜期货",
+      "rows": 6576,
+      "first": "2000-08-30",
+      "last": "2026-11-09",
+      "file": "data/copper.json"
     }
   },
   "last_update": "2026-11-10T11:45:29.835097+00:00"

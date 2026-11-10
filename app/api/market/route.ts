@@ -22,6 +22,8 @@ const SERIES: {
   { key: "sse", symbol: "000001.SS", name: "上证指数", currency: "CNY", source: "yahoo" },
   { key: "csi300", symbol: "000300", name: "沪深300", currency: "CNY", source: "eastmoney" },
   { key: "gold", symbol: "GC=F", name: "黄金期货", currency: "USD", source: "yahoo" },
+  { key: "silver", symbol: "SI=F", name: "白银期货", currency: "USD", source: "yahoo" },
+  { key: "copper", symbol: "HG=F", name: "铜期货", currency: "USD", source: "yahoo" },
   { key: "dxy", symbol: "DX-Y.NYB", name: "美元指数", currency: "USD", source: "yahoo" },
   { key: "usdcny", symbol: "CNY=X", name: "美元/人民币", currency: "CNY", source: "yahoo" },
   { key: "usdjpy", symbol: "JPY=X", name: "美元/日元", currency: "JPY", source: "yahoo" },

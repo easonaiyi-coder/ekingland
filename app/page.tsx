@@ -51,6 +51,8 @@ const OVERLAY: { key: string; color: string }[] = [
   { key: "sse", color: "#16a34a" },
   { key: "csi300", color: "#65a30d" },
   { key: "gold", color: "#ca8a04" },
+  { key: "silver", color: "#94a3b8" },
+  { key: "copper", color: "#b45309" },
   { key: "dxy", color: "#dc2626" },
   { key: "usdcny", color: "#0d9488" },
   { key: "usdjpy", color: "#4f46e5" },
@@ -82,7 +84,7 @@ const CATEGORIES: { id: string; label: string; keys: string[] }[] = [
     label: "外汇",
     keys: ["usdcny", "usdjpy", "cnyjpy", "eurusd", "gbpusd", "usdhkd", "dxy"],
   },
-  { id: "metals", label: "贵金属", keys: ["gold"] },
+  { id: "metals", label: "贵金属", keys: ["gold", "silver", "copper"] },
   {
     id: "gdp",
     label: "GDP",
@@ -186,25 +188,35 @@ const CATEGORY_COLOR: Record<string, string> = {
   pandemic: "#0891b2",
 };
 
-function buildNormalized(
+// One chart per group, stacked vertically, all sharing the same date
+// grid so their time axes line up exactly. Each chart plots REAL values
+// (no normalization) — different groups have different units, so they
+// cannot share one axis.
+type GroupChart = {
+  id: string;
+  label: string;
+  keys: { key: string; color: string }[];
+  merged: Record<string, any>[];
+  // first in-window real value per series, for the tooltip's % change
+  bases: Record<string, number>;
+};
+
+function buildGroups(
   data: MarketData,
-  keys: { key: string; color: string }[],
   days: number,
   granularity: Granularity
-) {
-  const sliced: Record<string, { date: string; value: number }[]> = {};
-  // Real (unnormalized) closes, keyed by date then series key, so the
-  // tooltip can show actual values instead of the normalized index.
-  const real: Record<string, Record<string, number>> = {};
+): { firstDate: string; lastDate: string; groups: GroupChart[] } {
+  const perKey: Record<string, { date: string; value: number }[]> = {};
+  const bases: Record<string, number> = {};
   const dates = new Set<string>();
   // The window is defined by the daily series: their last `days` rows.
   // Annual series (GDP: 30 rows) must NOT be sliced by row count — that
   // would keep their whole 30-year history inside a 1-year view and blow
   // up the y-axis. Filter every series by the window's calendar start
-  // date instead, and normalize to the first value inside the window.
+  // date instead.
   const DAILY_MIN_ROWS = 252; // GDP has 30 rows; every daily series has 4700+
   let windowStart = "";
-  for (const { key } of keys) {
+  for (const { key } of OVERLAY) {
     const s = data.series[key];
     if (!s) continue;
     const rows = s.rows.filter((r) => r.close != null);
@@ -212,7 +224,7 @@ function buildNormalized(
     const first = rows.slice(-days)[0]?.date;
     if (first && (!windowStart || first < windowStart)) windowStart = first;
   }
-  for (const { key } of keys) {
+  for (const { key } of OVERLAY) {
     const s = data.series[key];
     if (!s) continue;
     const inWindow = s.rows.filter(
@@ -220,30 +232,59 @@ function buildNormalized(
     );
     const rows = resampleRows(inWindow, granularity);
     if (!rows.length) continue;
-    const base = rows[0].close as number;
-    sliced[key] = rows.map((r) => ({
+    bases[key] = rows[0].close as number;
+    perKey[key] = rows.map((r) => ({
       date: r.date,
-      value: ((r.close as number) / base) * 100,
+      value: r.close as number,
     }));
-    rows.forEach((r) => {
-      dates.add(r.date);
-      (real[r.date] ||= {})[key] = r.close as number;
-    });
+    rows.forEach((r) => dates.add(r.date));
   }
   const sortedDates = [...dates].sort();
   const byDate: Record<string, Record<string, number>> = {};
-  for (const [key, pts] of Object.entries(sliced)) {
+  for (const [key, pts] of Object.entries(perKey)) {
     for (const p of pts) {
       (byDate[p.date] ||= {})[key] = p.value;
     }
   }
-  const merged = sortedDates.map((date) => ({ date, ...byDate[date] }));
+  const groups: GroupChart[] = [];
+  const allCats = [
+    ...CATEGORIES,
+    { id: "other", label: "其他", keys: [] as string[] },
+  ];
+  for (const c of allCats) {
+    const keys = OVERLAY.filter((o) =>
+      c.id === "other" ? categoryOf(o.key) === "other" : c.keys.includes(o.key)
+    );
+    if (!keys.length) continue;
+    if (!keys.some((o) => perKey[o.key]?.length)) continue;
+    const merged = sortedDates.map((date) => {
+      const row: Record<string, any> = { date };
+      for (const o of keys) {
+        const v = byDate[date]?.[o.key];
+        if (v != null) row[o.key] = v;
+      }
+      return row;
+    });
+    const groupBases: Record<string, number> = {};
+    for (const o of keys) if (bases[o.key] != null) groupBases[o.key] = bases[o.key];
+    groups.push({ id: c.id, label: c.label, keys, merged, bases: groupBases });
+  }
   return {
-    merged,
-    real,
     firstDate: sortedDates[0],
     lastDate: sortedDates[sortedDates.length - 1],
+    groups,
   };
+}
+
+// Y-axis tick labels per group: GDP in $ trillions, everything else
+// adaptive (thousands separators for large values, decimals for small).
+function formatAxisTick(groupId: string, v: number): string {
+  if (groupId === "gdp") return `$${(v / 1e12).toFixed(0)}万亿`;
+  if (Math.abs(v) >= 1000)
+    return v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (Math.abs(v) >= 100) return v.toFixed(0);
+  if (Math.abs(v) >= 10) return v.toFixed(1);
+  return v.toFixed(2);
 }
 
 // Format a real (unnormalized) value: GDP in $ trillions, everything
@@ -257,14 +298,16 @@ function formatReal(key: string, v: number): string {
   });
 }
 
-function OverlayTooltip({ active, payload, label, real }: any) {
+function OverlayTooltip({ active, payload, label, bases, events }: any) {
   if (!active || !payload?.length) return null;
+  const dayEvents: any[] = events?.[label] ?? [];
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
       <div className="mb-1 font-medium text-slate-700">{label}</div>
       {payload.map((p: any) => {
-        const rv = real?.[label]?.[p.dataKey];
-        const pct = p.value != null ? p.value - 100 : null;
+        const base = bases?.[p.dataKey];
+        const pct =
+          p.value != null && base ? (p.value / base - 1) * 100 : null;
         return (
           <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
             <span
@@ -273,7 +316,7 @@ function OverlayTooltip({ active, payload, label, real }: any) {
             />
             <span className="w-20 text-slate-500">{p.name}</span>
             <span className="ml-auto font-mono font-medium text-slate-800">
-              {rv != null ? formatReal(p.dataKey, rv) : "--"}
+              {p.value != null ? formatReal(p.dataKey, p.value) : "--"}
               {pct != null && (
                 <span className="ml-1 text-slate-400">
                   ({pct >= 0 ? "+" : ""}
@@ -284,6 +327,20 @@ function OverlayTooltip({ active, payload, label, real }: any) {
           </div>
         );
       })}
+      {dayEvents.map((e: any) => (
+        <div
+          key={e.date + e.title}
+          className="mt-1 flex items-center gap-1.5 border-t border-slate-100 pt-1 text-slate-600"
+        >
+          <span
+            className="inline-block h-2 w-2 shrink-0 rounded-full"
+            style={{ background: CATEGORY_COLOR[e.category] ?? "#64748b" }}
+          />
+          <span className="truncate">
+            {CATEGORY_LABEL[e.category] ?? e.category} · {e.title}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -298,7 +355,7 @@ export default function Page() {
     total: number | null;
     phase: string;
   } | null>(null);
-  const [rangeIdx, setRangeIdx] = useState(6);
+  const [rangeIdx, setRangeIdx] = useState(3); // default 1年
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
@@ -309,8 +366,9 @@ export default function Page() {
   useEffect(() => {
     setMounted(true);
   }, []);
-  const [visibleCats, setVisibleCats] = useState<Set<string>>(
-    new Set(["stocks", "fx", "metals", "gdp", "other"])
+  // per-series selection (multi-select, across categories); default: all
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(
+    () => new Set(OVERLAY.map((o) => o.key))
   );
 
   // categories actually present (其他 only shows when something is uncategorized)
@@ -321,16 +379,24 @@ export default function Page() {
     return list;
   }, []);
 
-  const visibleKeys = useMemo(
-    () => OVERLAY.filter((o) => visibleCats.has(categoryOf(o.key))),
-    [visibleCats]
-  );
-
   function toggleCat(id: string) {
-    setVisibleCats((prev) => {
+    const keys = OVERLAY.filter((o) => categoryOf(o.key) === id).map(
+      (o) => o.key
+    );
+    setSelectedKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const all = keys.every((k) => next.has(k));
+      if (all) keys.forEach((k) => next.delete(k));
+      else keys.forEach((k) => next.add(k));
+      return next;
+    });
+  }
+
+  function toggleKey(key: string) {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -389,42 +455,68 @@ export default function Page() {
 
   const days = RANGES[rangeIdx].days;
 
-  const overlay = useMemo(
-    () => (data ? buildNormalized(data, OVERLAY, days, granularity) : null),
+  const groups = useMemo(
+    () => (data ? buildGroups(data, days, granularity) : null),
     [data, days, granularity]
   );
 
   const visibleEvents = useMemo(() => {
-    if (!data || !overlay) return [];
+    if (!data || !groups) return [];
     return data.events.filter(
-      (e) => e.date >= overlay.firstDate && e.date <= overlay.lastDate
+      (e) => e.date >= groups.firstDate && e.date <= groups.lastDate
     );
-  }, [data, overlay]);
+  }, [data, groups]);
 
   const dotEvents = useMemo(
     () => visibleEvents.filter((e) => DOT_CATEGORIES.has(e.category)),
     [visibleEvents]
   );
 
-  // dot y position: highest normalized value on the nearest trading day
-  const dotY = useMemo(() => {
-    if (!overlay) return new Map<string, number>();
-    const m = new Map<string, number>();
-    for (const e of dotEvents) {
-      let row = overlay.merged.find((r) => r.date >= e.date);
-      if (!row) row = overlay.merged[overlay.merged.length - 1];
-      if (!row) continue;
-      let max = -Infinity;
-      for (const { key } of visibleKeys) {
-        const v = (row as any)[key];
-        if (typeof v === "number") max = Math.max(max, v);
-      }
-      if (max !== -Infinity) m.set(e.date, max);
+  // events mapped to the nearest chart row date (trading day >= event
+  // date), so the hover tooltip can show them for the hovered date.
+  const eventsByDate = useMemo(() => {
+    const m: Record<string, MarketEvent[]> = {};
+    if (!groups) return m;
+    const dates = groups.groups[0]?.merged.map((r) => r.date) ?? [];
+    for (const e of visibleEvents) {
+      const rowDate = dates.find((d) => d >= e.date) ?? dates[dates.length - 1];
+      if (!rowDate) continue;
+      (m[rowDate] ||= []).push(e);
     }
     return m;
-  }, [overlay, dotEvents, visibleKeys]);
+  }, [groups, visibleEvents]);
 
-  const lastDate = overlay?.lastDate ?? "";
+  // shared date grid (all group charts use the same one, so their time
+  // axes line up exactly); also the x positions for the event timeline.
+  const chartDates = useMemo(
+    () => groups?.groups[0]?.merged.map((r) => r.date) ?? [],
+    [groups]
+  );
+
+  // dot y position per group: highest real value on the nearest trading day
+  const dotYByGroup = useMemo(() => {
+    const out = new Map<string, Map<string, number>>();
+    if (!groups) return out;
+    for (const g of groups.groups) {
+      const m = new Map<string, number>();
+      const keys = g.keys.filter((o) => selectedKeys.has(o.key));
+      for (const e of dotEvents) {
+        let row = g.merged.find((r) => r.date >= e.date);
+        if (!row) row = g.merged[g.merged.length - 1];
+        if (!row) continue;
+        let max = -Infinity;
+        for (const { key } of keys) {
+          const v = (row as any)[key];
+          if (typeof v === "number") max = Math.max(max, v);
+        }
+        if (max !== -Infinity) m.set(e.date, max);
+      }
+      out.set(g.id, m);
+    }
+    return out;
+  }, [groups, dotEvents, selectedKeys]);
+
+  const lastDate = groups?.lastDate ?? "";
 
   return (
     <main className="min-h-screen bg-[#f3f5f8] text-slate-900">
@@ -548,14 +640,14 @@ export default function Page() {
           </div>
         )}
 
-        {mounted && data && overlay && (
+        {mounted && data && groups && (
           <>
-            {/* overlay chart */}
-            <section className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold">
-                  全球市场全品种走势叠加对比（归一化，起点=100，悬停查看真实值）
-                </h2>
+            {/* series selection: per-item checkboxes, multi-select across categories */}
+            <div className="mb-4 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs shadow-sm">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-medium text-slate-600">
+                  显示品种（每个子项可单独选，可跨分类多选）
+                </span>
                 <button
                   onClick={() => setShowEvents((v) => !v)}
                   className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50"
@@ -563,41 +655,86 @@ export default function Page() {
                   {showEvents ? "隐藏事件" : "事件列表"}
                 </button>
               </div>
-              <div className="mb-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
-                <span className="text-slate-500">显示：</span>
-                {presentCats.map((c) => (
-                  <label
-                    key={c.id}
-                    className="flex cursor-pointer items-center gap-1.5 text-slate-600"
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {presentCats.map((c) => {
+                  const keys = OVERLAY.filter((o) => categoryOf(o.key) === c.id);
+                  const all = keys.every((o) => selectedKeys.has(o.key));
+                  const some = keys.some((o) => selectedKeys.has(o.key));
+                  return (
+                    <div key={c.id}>
+                      <label className="mb-1 flex cursor-pointer items-center gap-1.5 font-medium text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={all}
+                          ref={(el) => {
+                            if (el) el.indeterminate = some && !all;
+                          }}
+                          onChange={() => toggleCat(c.id)}
+                          className="h-3.5 w-3.5 accent-slate-900"
+                        />
+                        {c.label}
+                      </label>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        {keys.map((o) => (
+                          <label
+                            key={o.key}
+                            className="flex cursor-pointer items-center gap-1 text-slate-600"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedKeys.has(o.key)}
+                              onChange={() => toggleKey(o.key)}
+                              className="h-3.5 w-3.5 accent-slate-900"
+                            />
+                            {data.series[o.key]?.name ?? o.key}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* one chart per group, stacked, time axes aligned */}
+            {groups.groups
+              .filter((g) => g.keys.some((o) => selectedKeys.has(o.key)))
+              .map((g) => {
+                const dotY = dotYByGroup.get(g.id) ?? new Map<string, number>();
+                return (
+                  <section
+                    key={g.id}
+                    className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                   >
-                    <input
-                      type="checkbox"
-                      checked={visibleCats.has(c.id)}
-                      onChange={() => toggleCat(c.id)}
-                      className="h-3.5 w-3.5 accent-slate-900"
-                    />
-                    {c.label}
-                  </label>
-                ))}
-              </div>
-              <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                {visibleKeys
-                  .filter(({ key }) =>
-                    overlay.merged.some((r) => typeof (r as any)[key] === "number")
-                  )
-                  .map(({ key, color }) => (
-                    <span key={key} className="flex items-center gap-1.5">
-                      <span
-                        className="inline-block h-2 w-2 rounded-full"
-                        style={{ background: color }}
-                      />
-                      {data.series[key]?.name ?? key}
-                    </span>
-                  ))}
-              </div>
-              <div className="h-[480px] w-full md:h-[600px] xl:h-[680px]">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="text-sm font-semibold">
+                        {g.label}（真实值{g.id === "gdp" ? "，年度" : ""}）
+                      </h2>
+                    </div>
+                    <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                      {g.keys
+                        .filter(
+                          ({ key }) =>
+                            selectedKeys.has(key) &&
+                            g.merged.some((r) => typeof (r as any)[key] === "number")
+                        )
+                        .map(({ key, color }) => (
+                          <span key={key} className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ background: color }}
+                            />
+                            {data.series[key]?.name ?? key}
+                          </span>
+                        ))}
+                    </div>
+              <div className="h-[320px] w-full md:h-[400px] xl:h-[440px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={overlay.merged} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+                  <LineChart
+                    data={g.merged}
+                    syncId="ekingland"
+                    margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
+                  >
                     <CartesianGrid stroke="#e8ecf1" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="date"
@@ -613,10 +750,17 @@ export default function Page() {
                       tick={{ fontSize: 11, fill: "#64748b" }}
                       domain={["auto", "auto"]}
                       scale={logScale ? "log" : "linear"}
-                      width={52}
+                      width={64}
+                      tickFormatter={(v: number) => formatAxisTick(g.id, v)}
                     />
-                    <Tooltip content={<OverlayTooltip real={overlay.real} />} />
-                    {visibleKeys.map(({ key, color }) => (
+                    <Tooltip
+                      content={
+                        <OverlayTooltip bases={g.bases} events={eventsByDate} />
+                      }
+                    />
+                    {g.keys
+                      .filter((o) => selectedKeys.has(o.key))
+                      .map(({ key, color }) => (
                       <Line
                         key={key}
                         type="monotone"
@@ -624,7 +768,7 @@ export default function Page() {
                         name={data.series[key]?.name ?? key}
                         stroke={color}
                         strokeWidth={1.6}
-                        dot={false}
+                        dot={g.id === "gdp" ? { r: 3 } : false}
                         connectNulls
                       />
                     ))}
@@ -632,7 +776,7 @@ export default function Page() {
                       dotEvents.map((e) => {
                         const y = dotY.get(e.date);
                         if (y == null) return null;
-                        const row = overlay.merged.find((r) => r.date >= e.date);
+                        const row = g.merged.find((r) => r.date >= e.date);
                         if (!row) return null;
                         return (
                           <ReferenceDot
@@ -649,7 +793,7 @@ export default function Page() {
                     {selectedEvent && (
                       <ReferenceLine
                         x={
-                          overlay.merged.find((r) => r.date >= selectedEvent.date)?.date ??
+                          g.merged.find((r) => r.date >= selectedEvent.date)?.date ??
                           selectedEvent.date
                         }
                         stroke="#f59e0b"
@@ -660,10 +804,13 @@ export default function Page() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+                  </section>
+                );
+              })}
 
               {/* selected event detail */}
               {selectedEvent && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
                   <div className="flex items-center gap-2">
                     <span
                       className="rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
@@ -684,33 +831,72 @@ export default function Page() {
                 </div>
               )}
 
-              {/* event strip */}
+              {/* event timeline, aligned with the charts' time axis */}
               {showEvents && visibleEvents.length > 0 && (
-                <div className="mt-4 border-t border-slate-100 pt-3">
-                  <div className="mb-2 text-xs font-medium text-slate-500">
-                    区间重大事件轴（{visibleEvents.length} 件）
+                <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                    <span className="font-medium text-slate-500">
+                      区间重大事件（{visibleEvents.length} 件，对齐时间轴，悬停看全文，点击看详情）
+                    </span>
+                    <span className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500">
+                      {Object.entries(CATEGORY_LABEL)
+                        .filter(([k]) =>
+                          visibleEvents.some((e) => e.category === k)
+                        )
+                        .map(([k, label]) => (
+                          <span key={k} className="flex items-center gap-1">
+                            <span
+                              className="inline-block h-2 w-2 rounded-full"
+                              style={{ background: CATEGORY_COLOR[k] ?? "#64748b" }}
+                            />
+                            {label}
+                          </span>
+                        ))}
+                    </span>
                   </div>
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {visibleEvents.map((e) => (
-                      <button
-                        key={e.date + e.title}
-                        onClick={() => setSelectedEvent(e)}
-                        className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${
-                          selectedEvent?.date === e.date && selectedEvent?.title === e.title
-                            ? "border-amber-400 bg-amber-50 font-semibold text-amber-700"
-                            : "border-slate-200 bg-white text-slate-600 hover:border-amber-300"
-                        }`}
-                      >
-                        {e.date.slice(5)} {e.title}
-                      </button>
-                    ))}
+                  {/* track aligned with the plot area: YAxis 64px + right margin 12px */}
+                  <div className="relative ml-16 mr-3 h-12">
+                    <div className="absolute left-0 right-0 top-1/2 h-px bg-slate-300" />
+                    {Object.entries(eventsByDate).map(([rowDate, list]) => {
+                      const idx = chartDates.indexOf(rowDate);
+                      if (idx < 0) return null;
+                      const left = ((idx + 0.5) / chartDates.length) * 100;
+                      return (
+                        <div
+                          key={rowDate}
+                          className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
+                          style={{ left: `${left}%` }}
+                        >
+                          {list.map((e) => (
+                            <button
+                              key={e.date + e.title}
+                              onClick={() => setSelectedEvent(e)}
+                              title={`${e.date} ${e.title} — ${e.note}`}
+                              className={`h-2 w-2 rounded-full ring-1 ring-white ${
+                                selectedEvent?.date === e.date &&
+                                selectedEvent?.title === e.title
+                                  ? "scale-125 ring-2 ring-amber-400"
+                                  : ""
+                              }`}
+                              style={{
+                                background:
+                                  CATEGORY_COLOR[e.category] ?? "#64748b",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="ml-16 mr-3 flex justify-between text-[11px] text-slate-400">
+                    <span>{groups.firstDate}</span>
+                    <span>{groups.lastDate}</span>
                   </div>
                 </div>
               )}
-            </section>
 
             <p className="mt-4 text-center text-xs text-slate-400">
-              行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
+              行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。各组分图真实值、时间轴同步；底部事件轴与图表时间轴对齐。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
             </p>
           </>
         )}
