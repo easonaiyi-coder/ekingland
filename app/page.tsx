@@ -193,6 +193,9 @@ function buildNormalized(
   granularity: Granularity
 ) {
   const sliced: Record<string, { date: string; value: number }[]> = {};
+  // Real (unnormalized) closes, keyed by date then series key, so the
+  // tooltip can show actual values instead of the normalized index.
+  const real: Record<string, Record<string, number>> = {};
   const dates = new Set<string>();
   // The window is defined by the daily series: their last `days` rows.
   // Annual series (GDP: 30 rows) must NOT be sliced by row count — that
@@ -222,7 +225,10 @@ function buildNormalized(
       date: r.date,
       value: ((r.close as number) / base) * 100,
     }));
-    rows.forEach((r) => dates.add(r.date));
+    rows.forEach((r) => {
+      dates.add(r.date);
+      (real[r.date] ||= {})[key] = r.close as number;
+    });
   }
   const sortedDates = [...dates].sort();
   const byDate: Record<string, Record<string, number>> = {};
@@ -234,28 +240,50 @@ function buildNormalized(
   const merged = sortedDates.map((date) => ({ date, ...byDate[date] }));
   return {
     merged,
+    real,
     firstDate: sortedDates[0],
     lastDate: sortedDates[sortedDates.length - 1],
   };
 }
 
-function OverlayTooltip({ active, payload, label }: any) {
+// Format a real (unnormalized) value: GDP in $ trillions, everything
+// else with thousands separators (2 decimals >= 100, else 4).
+function formatReal(key: string, v: number): string {
+  if (key.startsWith("gdp_")) return `$${(v / 1e12).toFixed(2)}万亿`;
+  const digits = Math.abs(v) >= 100 ? 2 : 4;
+  return v.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function OverlayTooltip({ active, payload, label, real }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
       <div className="mb-1 font-medium text-slate-700">{label}</div>
-      {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
-          <span
-            className="inline-block h-2 w-2 rounded-full"
-            style={{ background: p.stroke }}
-          />
-          <span className="w-20 text-slate-500">{p.name}</span>
-          <span className="ml-auto font-mono font-medium text-slate-800">
-            {p.value != null ? p.value.toFixed(1) : "--"}
-          </span>
-        </div>
-      ))}
+      {payload.map((p: any) => {
+        const rv = real?.[label]?.[p.dataKey];
+        const pct = p.value != null ? p.value - 100 : null;
+        return (
+          <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
+            <span
+              className="inline-block h-2 w-2 rounded-full"
+              style={{ background: p.stroke }}
+            />
+            <span className="w-20 text-slate-500">{p.name}</span>
+            <span className="ml-auto font-mono font-medium text-slate-800">
+              {rv != null ? formatReal(p.dataKey, rv) : "--"}
+              {pct != null && (
+                <span className="ml-1 text-slate-400">
+                  ({pct >= 0 ? "+" : ""}
+                  {pct.toFixed(1)}%)
+                </span>
+              )}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -526,7 +554,7 @@ export default function Page() {
             <section className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">
-                  全球市场全品种走势叠加对比（归一化，起点=100）
+                  全球市场全品种走势叠加对比（归一化，起点=100，悬停查看真实值）
                 </h2>
                 <button
                   onClick={() => setShowEvents((v) => !v)}
@@ -587,7 +615,7 @@ export default function Page() {
                       scale={logScale ? "log" : "linear"}
                       width={52}
                     />
-                    <Tooltip content={<OverlayTooltip />} />
+                    <Tooltip content={<OverlayTooltip real={overlay.real} />} />
                     {visibleKeys.map(({ key, color }) => (
                       <Line
                         key={key}
