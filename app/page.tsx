@@ -63,11 +63,8 @@ const OVERLAY: { key: string; color: string }[] = [
   { key: "gdp_usa", color: "#0e7490" },
   { key: "gdp_chn", color: "#b91c1c" },
   { key: "gdp_jpn", color: "#a16207" },
-  { key: "gdp_deu", color: "#4d7c0f" },
+  { key: "gdp_eu", color: "#4d7c0f" },
   { key: "gdp_ind", color: "#9d174d" },
-  { key: "gdp_gbr", color: "#1e40af" },
-  { key: "gdp_fra", color: "#6d28d9" },
-  { key: "gdp_ita", color: "#0f766e" },
   { key: "gdp_can", color: "#b45309" },
   { key: "gdp_bra", color: "#15803d" },
   { key: "gdp_wld", color: "#111827" },
@@ -92,11 +89,8 @@ const CATEGORIES: { id: string; label: string; keys: string[] }[] = [
       "gdp_usa",
       "gdp_chn",
       "gdp_jpn",
-      "gdp_deu",
+      "gdp_eu",
       "gdp_ind",
-      "gdp_gbr",
-      "gdp_fra",
-      "gdp_ita",
       "gdp_can",
       "gdp_bra",
       "gdp_wld",
@@ -205,7 +199,12 @@ function buildGroups(
   data: MarketData,
   days: number,
   granularity: Granularity
-): { firstDate: string; lastDate: string; groups: GroupChart[] } {
+): {
+  firstDate: string;
+  lastDate: string;
+  groups: GroupChart[];
+  combined: { merged: Record<string, any>[]; bases: Record<string, number> };
+} {
   const perKey: Record<string, { date: string; value: number }[]> = {};
   const bases: Record<string, number> = {};
   const dates = new Set<string>();
@@ -269,11 +268,21 @@ function buildGroups(
     for (const o of keys) if (bases[o.key] != null) groupBases[o.key] = bases[o.key];
     groups.push({ id: c.id, label: c.label, keys, merged, bases: groupBases });
   }
+  // combined grid (all series, real values) for the top 自选 chart
+  const combined = sortedDates.map((date) => ({ date, ...byDate[date] }));
   return {
     firstDate: sortedDates[0],
     lastDate: sortedDates[sortedDates.length - 1],
     groups,
+    combined: { merged: combined, bases },
   };
+}
+
+// Y-axis tick labels for the top 自选 chart (mixed series, so the
+// formatter adapts per value: GDP in $ trillions, the rest adaptive).
+function formatAxisTickTop(v: number): string {
+  if (Math.abs(v) >= 1e12) return `$${(v / 1e12).toFixed(0)}万亿`;
+  return formatAxisTick("stocks", v);
 }
 
 // Y-axis tick labels per group: GDP in $ trillions, everything else
@@ -348,8 +357,8 @@ function OverlayTooltip({ active, payload, label, bases, events }: any) {
 export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Log scale by default; the toggle also shows the normal linear axis.
-  const [logScale, setLogScale] = useState(true);
+  // Linear scale by default; the toggle also shows the log axis.
+  const [logScale, setLogScale] = useState(false);
   const [progress, setProgress] = useState<{
     loaded: number;
     total: number | null;
@@ -371,13 +380,17 @@ export default function Page() {
     () => new Set(OVERLAY.map((o) => o.key))
   );
 
-  // categories actually present (其他 only shows when something is uncategorized)
-  const presentCats = useMemo(() => {
-    const ids = new Set(OVERLAY.map((o) => categoryOf(o.key)));
-    const list = CATEGORIES.filter((c) => ids.has(c.id));
-    if (ids.has("other")) list.push({ id: "other", label: "其他", keys: [] });
-    return list;
-  }, []);
+  // collapsed groups in the selection panel (default: all expanded)
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set());
+
+  function toggleCollapse(id: string) {
+    setCollapsedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   function toggleCat(id: string) {
     const keys = OVERLAY.filter((o) => categoryOf(o.key) === id).map(
@@ -516,6 +529,30 @@ export default function Page() {
     return out;
   }, [groups, dotEvents, selectedKeys]);
 
+  // top 自选 chart: the currently selected series, combined in one chart
+  const topKeys = useMemo(
+    () => OVERLAY.filter((o) => selectedKeys.has(o.key)),
+    [selectedKeys]
+  );
+
+  // dot y for the top chart: highest real value among selected series
+  const topDotY = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!groups) return m;
+    for (const e of dotEvents) {
+      let row = groups.combined.merged.find((r) => r.date >= e.date);
+      if (!row) row = groups.combined.merged[groups.combined.merged.length - 1];
+      if (!row) continue;
+      let max = -Infinity;
+      for (const { key } of topKeys) {
+        const v = (row as any)[key];
+        if (typeof v === "number") max = Math.max(max, v);
+      }
+      if (max !== -Infinity) m.set(e.date, max);
+    }
+    return m;
+  }, [groups, dotEvents, topKeys]);
+
   const lastDate = groups?.lastDate ?? "";
 
   return (
@@ -592,6 +629,12 @@ export default function Page() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => setShowEvents((v) => !v)}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50"
+            >
+              {showEvents ? "隐藏事件" : "事件列表"}
+            </button>
           </div>
         </div>
 
@@ -642,65 +685,212 @@ export default function Page() {
 
         {mounted && data && groups && (
           <>
-            {/* series selection: per-item checkboxes, multi-select across categories */}
-            <div className="mb-4 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs shadow-sm">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="font-medium text-slate-600">
-                  显示品种（每个子项可单独选，可跨分类多选）
-                </span>
-                <button
-                  onClick={() => setShowEvents((v) => !v)}
-                  className="rounded-lg border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50"
-                >
-                  {showEvents ? "隐藏事件" : "事件列表"}
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
-                {presentCats.map((c) => {
-                  const keys = OVERLAY.filter((o) => categoryOf(o.key) === c.id);
-                  const all = keys.every((o) => selectedKeys.has(o.key));
-                  const some = keys.some((o) => selectedKeys.has(o.key));
-                  return (
-                    <div key={c.id}>
-                      <label className="mb-1 flex cursor-pointer items-center gap-1.5 font-medium text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={all}
-                          ref={(el) => {
-                            if (el) el.indeterminate = some && !all;
-                          }}
-                          onChange={() => toggleCat(c.id)}
-                          className="h-3.5 w-3.5 accent-slate-900"
-                        />
-                        {c.label}
-                      </label>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        {keys.map((o) => (
-                          <label
-                            key={o.key}
-                            className="flex cursor-pointer items-center gap-1 text-slate-600"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedKeys.has(o.key)}
-                              onChange={() => toggleKey(o.key)}
-                              className="h-3.5 w-3.5 accent-slate-900"
-                            />
-                            {data.series[o.key]?.name ?? o.key}
-                          </label>
+            {/* event timeline (pinned to top), aligned with the charts' time axis */}
+            {showEvents && visibleEvents.length > 0 && (
+              <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                  <span className="font-medium text-slate-500">
+                    区间重大事件（{visibleEvents.length} 件，对齐时间轴，悬停看全文，点击看详情）
+                  </span>
+                  <span className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500">
+                    {Object.entries(CATEGORY_LABEL)
+                      .filter(([k]) =>
+                        visibleEvents.some((e) => e.category === k)
+                      )
+                      .map(([k, label]) => (
+                        <span key={k} className="flex items-center gap-1">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ background: CATEGORY_COLOR[k] ?? "#64748b" }}
+                          />
+                          {label}
+                        </span>
+                      ))}
+                  </span>
+                </div>
+                {/* track aligned with the plot area: YAxis 64px + right margin 12px */}
+                <div className="relative ml-16 mr-3 h-12">
+                  <div className="absolute left-0 right-0 top-1/2 h-px bg-slate-300" />
+                  {Object.entries(eventsByDate).map(([rowDate, list]) => {
+                    const idx = chartDates.indexOf(rowDate);
+                    if (idx < 0) return null;
+                    const left = ((idx + 0.5) / chartDates.length) * 100;
+                    return (
+                      <div
+                        key={rowDate}
+                        className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
+                        style={{ left: `${left}%` }}
+                      >
+                        {list.map((e) => (
+                          <button
+                            key={e.date + e.title}
+                            onClick={() => setSelectedEvent(e)}
+                            title={`${e.date} ${e.title} — ${e.note}`}
+                            className={`h-2 w-2 rounded-full ring-1 ring-white ${
+                              selectedEvent?.date === e.date &&
+                              selectedEvent?.title === e.title
+                                ? "scale-125 ring-2 ring-amber-400"
+                                : ""
+                            }`}
+                            style={{
+                              background:
+                                CATEGORY_COLOR[e.category] ?? "#64748b",
+                            }}
+                          />
                         ))}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+                <div className="ml-16 mr-3 flex justify-between text-[11px] text-slate-400">
+                  <span>{groups.firstDate}</span>
+                  <span>{groups.lastDate}</span>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* selected event detail */}
+            {selectedEvent && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
+                    style={{ background: CATEGORY_COLOR[selectedEvent.category] ?? "#64748b" }}
+                  >
+                    {CATEGORY_LABEL[selectedEvent.category] ?? selectedEvent.category}
+                  </span>
+                  <span className="font-mono text-xs text-slate-500">{selectedEvent.date}</span>
+                  <span className="font-semibold">{selectedEvent.title}</span>
+                  <button
+                    onClick={() => setSelectedEvent(null)}
+                    className="ml-auto text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    关闭
+                  </button>
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedEvent.note}</p>
+              </div>
+            )}
+
+            {/* top 自选 chart: selected series combined in one chart */}
+            <section className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">自选组合（真实值）</h2>
+              </div>
+              {topKeys.length === 0 ? (
+                <div className="py-8 text-center text-sm text-slate-400">
+                  请在上方勾选要对比的品种
+                </div>
+              ) : (
+                <>
+                  <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                    {topKeys
+                      .filter(({ key }) =>
+                        groups.combined.merged.some(
+                          (r) => typeof (r as any)[key] === "number"
+                        )
+                      )
+                      .map(({ key, color }) => (
+                        <span key={key} className="flex items-center gap-1.5">
+                          <span
+                            className="inline-block h-2 w-2 rounded-full"
+                            style={{ background: color }}
+                          />
+                          {data.series[key]?.name ?? key}
+                        </span>
+                      ))}
+                  </div>
+                  <div className="h-[360px] w-full md:h-[440px] xl:h-[480px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={groups.combined.merged}
+                        syncId="ekingland"
+                        margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
+                      >
+                        <CartesianGrid stroke="#e8ecf1" strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          tickFormatter={(d: string) =>
+                            granularity === "day" || granularity === "week"
+                              ? d.slice(5)
+                              : d.slice(0, 7)
+                          }
+                          minTickGap={40}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#64748b" }}
+                          domain={["auto", "auto"]}
+                          scale={logScale ? "log" : "linear"}
+                          width={64}
+                          tickFormatter={(v: number) => formatAxisTickTop(v)}
+                        />
+                        <Tooltip
+                          content={
+                            <OverlayTooltip
+                              bases={groups.combined.bases}
+                              events={eventsByDate}
+                            />
+                          }
+                        />
+                        {topKeys.map(({ key, color }) => (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={data.series[key]?.name ?? key}
+                            stroke={color}
+                            strokeWidth={1.6}
+                            dot={false}
+                            connectNulls
+                          />
+                        ))}
+                        {showEvents &&
+                          dotEvents.map((e) => {
+                            const y = topDotY.get(e.date);
+                            if (y == null) return null;
+                            const row = groups.combined.merged.find(
+                              (r) => r.date >= e.date
+                            );
+                            if (!row) return null;
+                            return (
+                              <ReferenceDot
+                                key={e.date + e.title}
+                                x={row.date}
+                                y={y}
+                                r={4}
+                                fill="#f59e0b"
+                                stroke="#fff"
+                                strokeWidth={1.5}
+                              />
+                            );
+                          })}
+                        {selectedEvent && (
+                          <ReferenceLine
+                            x={
+                              groups.combined.merged.find(
+                                (r) => r.date >= selectedEvent.date
+                              )?.date ?? selectedEvent.date
+                            }
+                            stroke="#f59e0b"
+                            strokeDasharray="5 4"
+                            strokeWidth={2}
+                          />
+                        )}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </section>
 
             {/* one chart per group, stacked, time axes aligned */}
             {groups.groups
               .filter((g) => g.keys.some((o) => selectedKeys.has(o.key)))
               .map((g) => {
                 const dotY = dotYByGroup.get(g.id) ?? new Map<string, number>();
+                const all = g.keys.every((o) => selectedKeys.has(o.key));
+                const some = g.keys.some((o) => selectedKeys.has(o.key));
                 return (
                   <section
                     key={g.id}
@@ -710,23 +900,53 @@ export default function Page() {
                       <h2 className="text-sm font-semibold">
                         {g.label}（真实值{g.id === "gdp" ? "，年度" : ""}）
                       </h2>
-                    </div>
-                    <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                      {g.keys
-                        .filter(
-                          ({ key }) =>
-                            selectedKeys.has(key) &&
-                            g.merged.some((r) => typeof (r as any)[key] === "number")
-                        )
-                        .map(({ key, color }) => (
-                          <span key={key} className="flex items-center gap-1.5">
-                            <span
-                              className="inline-block h-2 w-2 rounded-full"
-                              style={{ background: color }}
-                            />
-                            {data.series[key]?.name ?? key}
-                          </span>
-                        ))}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {!collapsedCats.has(g.id) && (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                            <label className="flex cursor-pointer items-center gap-1 font-medium text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={all}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = some && !all;
+                                }}
+                                onChange={() => toggleCat(g.id)}
+                                className="h-3.5 w-3.5 cursor-pointer accent-slate-900"
+                              />
+                              全选
+                            </label>
+                            {g.keys.map(({ key, color }) => (
+                              <label
+                                key={key}
+                                className="flex cursor-pointer items-center gap-1 text-slate-600"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedKeys.has(key)}
+                                  onChange={() => toggleKey(key)}
+                                  className="h-3.5 w-3.5 accent-slate-900"
+                                />
+                                <span
+                                  className="inline-block h-2 w-2 rounded-full"
+                                  style={{ background: color }}
+                                />
+                                {data.series[key]?.name ?? key}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => toggleCollapse(g.id)}
+                          className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-50"
+                          title={
+                            collapsedCats.has(g.id)
+                              ? "展开品种选择"
+                              : "折叠品种选择"
+                          }
+                        >
+                          {collapsedCats.has(g.id) ? "品种 ▸" : "品种 ▾"}
+                        </button>
+                      </div>
                     </div>
               <div className="h-[320px] w-full md:h-[400px] xl:h-[440px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -807,93 +1027,6 @@ export default function Page() {
                   </section>
                 );
               })}
-
-              {/* selected event detail */}
-              {selectedEvent && (
-                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
-                      style={{ background: CATEGORY_COLOR[selectedEvent.category] ?? "#64748b" }}
-                    >
-                      {CATEGORY_LABEL[selectedEvent.category] ?? selectedEvent.category}
-                    </span>
-                    <span className="font-mono text-xs text-slate-500">{selectedEvent.date}</span>
-                    <span className="font-semibold">{selectedEvent.title}</span>
-                    <button
-                      onClick={() => setSelectedEvent(null)}
-                      className="ml-auto text-xs text-slate-400 hover:text-slate-600"
-                    >
-                      关闭
-                    </button>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600">{selectedEvent.note}</p>
-                </div>
-              )}
-
-              {/* event timeline, aligned with the charts' time axis */}
-              {showEvents && visibleEvents.length > 0 && (
-                <div className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                    <span className="font-medium text-slate-500">
-                      区间重大事件（{visibleEvents.length} 件，对齐时间轴，悬停看全文，点击看详情）
-                    </span>
-                    <span className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500">
-                      {Object.entries(CATEGORY_LABEL)
-                        .filter(([k]) =>
-                          visibleEvents.some((e) => e.category === k)
-                        )
-                        .map(([k, label]) => (
-                          <span key={k} className="flex items-center gap-1">
-                            <span
-                              className="inline-block h-2 w-2 rounded-full"
-                              style={{ background: CATEGORY_COLOR[k] ?? "#64748b" }}
-                            />
-                            {label}
-                          </span>
-                        ))}
-                    </span>
-                  </div>
-                  {/* track aligned with the plot area: YAxis 64px + right margin 12px */}
-                  <div className="relative ml-16 mr-3 h-12">
-                    <div className="absolute left-0 right-0 top-1/2 h-px bg-slate-300" />
-                    {Object.entries(eventsByDate).map(([rowDate, list]) => {
-                      const idx = chartDates.indexOf(rowDate);
-                      if (idx < 0) return null;
-                      const left = ((idx + 0.5) / chartDates.length) * 100;
-                      return (
-                        <div
-                          key={rowDate}
-                          className="absolute top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
-                          style={{ left: `${left}%` }}
-                        >
-                          {list.map((e) => (
-                            <button
-                              key={e.date + e.title}
-                              onClick={() => setSelectedEvent(e)}
-                              title={`${e.date} ${e.title} — ${e.note}`}
-                              className={`h-2 w-2 rounded-full ring-1 ring-white ${
-                                selectedEvent?.date === e.date &&
-                                selectedEvent?.title === e.title
-                                  ? "scale-125 ring-2 ring-amber-400"
-                                  : ""
-                              }`}
-                              style={{
-                                background:
-                                  CATEGORY_COLOR[e.category] ?? "#64748b",
-                              }}
-                            />
-                          ))}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="ml-16 mr-3 flex justify-between text-[11px] text-slate-400">
-                    <span>{groups.firstDate}</span>
-                    <span>{groups.lastDate}</span>
-                  </div>
-                </div>
-              )}
 
             <p className="mt-4 text-center text-xs text-slate-400">
               行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。各组分图真实值、时间轴同步；底部事件轴与图表时间轴对齐。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。

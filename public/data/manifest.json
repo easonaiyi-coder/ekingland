@@ -4,7 +4,7 @@
     "end": "2026-11-10"
   },
   "source": "Yahoo Finance chart API",
-  "fetched_at": "2026-11-10T14:12:49.632746+00:00",
+  "fetched_at": "2026-11-10T14:21:23.658550+00:00",
   "symbols": {
     "sp500": {
       "symbol": "^GSPC",
@@ -154,15 +154,6 @@
       "file": "data/gdp_jpn.json",
       "source": "World Bank"
     },
-    "gdp_deu": {
-      "symbol": "DEU",
-      "name": "德国GDP",
-      "rows": 30,
-      "first": "1996-12-31",
-      "last": "2025-12-31",
-      "file": "data/gdp_deu.json",
-      "source": "World Bank"
-    },
     "gdp_ind": {
       "symbol": "IND",
       "name": "印度GDP",
@@ -170,33 +161,6 @@
       "first": "1996-12-31",
       "last": "2025-12-31",
       "file": "data/gdp_ind.json",
-      "source": "World Bank"
-    },
-    "gdp_gbr": {
-      "symbol": "GBR",
-      "name": "英国GDP",
-      "rows": 30,
-      "first": "1996-12-31",
-      "last": "2025-12-31",
-      "file": "data/gdp_gbr.json",
-      "source": "World Bank"
-    },
-    "gdp_fra": {
-      "symbol": "FRA",
-      "name": "法国GDP",
-      "rows": 30,
-      "first": "1996-12-31",
-      "last": "2025-12-31",
-      "file": "data/gdp_fra.json",
-      "source": "World Bank"
-    },
-    "gdp_ita": {
-      "symbol": "ITA",
-      "name": "意大利GDP",
-      "rows": 30,
-      "first": "1996-12-31",
-      "last": "2025-12-31",
-      "file": "data/gdp_ita.json",
       "source": "World Bank"
     },
     "gdp_can": {
@@ -241,6 +205,15 @@
       "first": "2000-08-30",
       "last": "2026-11-09",
       "file": "data/copper.json"
+    },
+    "gdp_eu": {
+      "symbol": "EUU",
+      "name": "欧盟GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_eu.json",
+      "source": "World Bank"
     }
   },
   "last_update": "2026-11-10T11:45:29.835097+00:00"
