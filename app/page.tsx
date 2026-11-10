@@ -83,6 +83,52 @@ function categoryOf(key: string): string {
   return c ? c.id : "other";
 }
 
+const GRANULARITIES = [
+  { id: "day", label: "日" },
+  { id: "week", label: "周" },
+  { id: "month", label: "月" },
+  { id: "quarter", label: "季" },
+  { id: "year", label: "年" },
+] as const;
+type Granularity = (typeof GRANULARITIES)[number]["id"];
+
+// period key for aggregation: day = the date itself, week = ISO week,
+// month = YYYY-MM, quarter = YYYY-Qn, year = YYYY.
+function periodKey(date: string, g: Granularity): string {
+  const [y, m, d] = date.split("-").map(Number);
+  if (g === "month") return `${y}-${String(m).padStart(2, "0")}`;
+  if (g === "quarter") return `${y}-Q${Math.floor((m - 1) / 3) + 1}`;
+  if (g === "year") return `${y}`;
+  if (g === "week") {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    const day = (dt.getUTCDay() + 6) % 7; // Mon=0
+    dt.setUTCDate(dt.getUTCDate() - day + 3); // Thursday of this week
+    const thuYear = dt.getUTCFullYear();
+    const jan1 = new Date(Date.UTC(thuYear, 0, 1));
+    const week = Math.ceil(((dt.getTime() - jan1.getTime()) / 86400000 + 1) / 7);
+    return `${thuYear}-W${String(week).padStart(2, "0")}`;
+  }
+  return date;
+}
+
+// Aggregate daily rows to period-end rows (last close of each period).
+// Rows must be sorted ascending by date.
+function resampleRows<T extends { date: string }>(rows: T[], g: Granularity): T[] {
+  if (g === "day") return rows;
+  const out: T[] = [];
+  let curKey = "";
+  for (const r of rows) {
+    const k = periodKey(r.date, g);
+    if (k !== curKey) {
+      out.push(r);
+      curKey = k;
+    } else {
+      out[out.length - 1] = r;
+    }
+  }
+  return out;
+}
+
 const RANGES = [
   { label: "1个月", days: 22 },
   { label: "3个月", days: 66 },
@@ -117,14 +163,18 @@ const CATEGORY_COLOR: Record<string, string> = {
 function buildNormalized(
   data: MarketData,
   keys: { key: string; color: string }[],
-  days: number
+  days: number,
+  granularity: Granularity
 ) {
   const sliced: Record<string, { date: string; value: number }[]> = {};
   const dates = new Set<string>();
   for (const { key } of keys) {
     const s = data.series[key];
     if (!s) continue;
-    const rows = s.rows.filter((r) => r.close != null).slice(-days);
+    const rows = resampleRows(
+      s.rows.filter((r) => r.close != null).slice(-days),
+      granularity
+    );
     if (!rows.length) continue;
     const base = rows[0].close as number;
     sliced[key] = rows.map((r) => ({
@@ -173,6 +223,7 @@ export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rangeIdx, setRangeIdx] = useState(5);
+  const [granularity, setGranularity] = useState<Granularity>("day");
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
   // recharts measures its container in the browser; rendering the chart
@@ -221,8 +272,8 @@ export default function Page() {
   const days = RANGES[rangeIdx].days;
 
   const overlay = useMemo(
-    () => (data ? buildNormalized(data, OVERLAY, days) : null),
-    [data, days]
+    () => (data ? buildNormalized(data, OVERLAY, days, granularity) : null),
+    [data, days, granularity]
   );
 
   const visibleEvents = useMemo(() => {
@@ -265,27 +316,47 @@ export default function Page() {
           <div>
             <h1 className="text-xl font-bold tracking-tight">全球市场看板</h1>
             <p className="mt-0.5 text-xs text-slate-500">
-              日线 · 每日更新
+              {GRANULARITIES.find((g) => g.id === granularity)?.label}线 · 每日更新
               {lastDate ? ` · 数据截至 ${lastDate}` : ""}
               {data?.stale?.length
                 ? ` · 部分品种为缓存数据（${data.stale.join(", ")}）`
                 : ""}
             </p>
           </div>
-          <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
-            {RANGES.map((r, i) => (
-              <button
-                key={r.label}
-                onClick={() => setRangeIdx(i)}
-                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                  i === rangeIdx
-                    ? "bg-slate-900 text-white shadow"
-                    : "text-slate-600 hover:bg-white"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-slate-400">粒度</span>
+              <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+                {GRANULARITIES.map((g) => (
+                  <button
+                    key={g.id}
+                    onClick={() => setGranularity(g.id)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                      g.id === granularity
+                        ? "bg-slate-900 text-white shadow"
+                        : "text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+              {RANGES.map((r, i) => (
+                <button
+                  key={r.label}
+                  onClick={() => setRangeIdx(i)}
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                    i === rangeIdx
+                      ? "bg-slate-900 text-white shadow"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -350,7 +421,11 @@ export default function Page() {
                     <XAxis
                       dataKey="date"
                       tick={{ fontSize: 11, fill: "#64748b" }}
-                      tickFormatter={(d: string) => d.slice(5)}
+                      tickFormatter={(d: string) =>
+                        granularity === "day" || granularity === "week"
+                          ? d.slice(5)
+                          : d.slice(0, 7)
+                      }
                       minTickGap={40}
                     />
                     <YAxis
@@ -453,7 +528,7 @@ export default function Page() {
             </section>
 
             <p className="mt-4 text-center text-xs text-slate-400">
-              数据来自公开行情接口（Yahoo Finance / 东财），日线，每日收盘后更新；仅供参考，不构成投资建议。
+              数据来自公开行情接口（Yahoo Finance / 东财），日线，每日收盘后更新；图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
             </p>
           </>
         )}
