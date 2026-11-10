@@ -57,36 +57,11 @@ const OVERLAY: { key: string; color: string }[] = [
   { key: "dxy", color: "#dc2626" },
   { key: "usdcny", color: "#0d9488" },
   { key: "usdjpy", color: "#4f46e5" },
+  { key: "cnyjpy", color: "#9333ea" },
+  { key: "eurusd", color: "#f59e0b" },
+  { key: "gbpusd", color: "#0ea5e9" },
+  { key: "usdhkd", color: "#a3e635" },
 ];
-
-const FX_CARDS = [
-  "usdcny",
-  "usdjpy",
-  "cnyjpy",
-  "eurusd",
-  "gbpusd",
-  "usdhkd",
-  "gold",
-  "dxy",
-];
-
-const DECIMALS: Record<string, number> = {
-  sp500: 2,
-  nasdaq: 2,
-  dow: 2,
-  nikkei: 2,
-  hsi: 2,
-  sse: 2,
-  csi300: 2,
-  gold: 1,
-  dxy: 2,
-  usdcny: 4,
-  usdjpy: 2,
-  cnyjpy: 2,
-  eurusd: 4,
-  gbpusd: 4,
-  usdhkd: 4,
-};
 
 const RANGES = [
   { label: "1个月", days: 22 },
@@ -117,31 +92,38 @@ const CATEGORY_COLOR: Record<string, string> = {
   pandemic: "#0891b2",
 };
 
-function fmt(n: number | null | undefined, decimals: number) {
-  if (n == null || Number.isNaN(n)) return "--";
-  return n.toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
-function changePct(rows: Row[]) {
-  if (rows.length < 2) return null;
-  const last = rows[rows.length - 1].close;
-  const prev = rows[rows.length - 2].close;
-  if (last == null || prev == null || prev === 0) return null;
-  return ((last - prev) / prev) * 100;
-}
-
-function Change({ pct }: { pct: number | null }) {
-  if (pct == null) return <span className="text-slate-400">--</span>;
-  const up = pct >= 0;
-  return (
-    <span className={up ? "text-red-600" : "text-green-600"}>
-      {up ? "+" : ""}
-      {pct.toFixed(2)}%
-    </span>
-  );
+function buildNormalized(
+  data: MarketData,
+  keys: { key: string; color: string }[],
+  days: number
+) {
+  const sliced: Record<string, { date: string; value: number }[]> = {};
+  const dates = new Set<string>();
+  for (const { key } of keys) {
+    const s = data.series[key];
+    if (!s) continue;
+    const rows = s.rows.filter((r) => r.close != null).slice(-days);
+    if (!rows.length) continue;
+    const base = rows[0].close as number;
+    sliced[key] = rows.map((r) => ({
+      date: r.date,
+      value: ((r.close as number) / base) * 100,
+    }));
+    rows.forEach((r) => dates.add(r.date));
+  }
+  const sortedDates = [...dates].sort();
+  const byDate: Record<string, Record<string, number>> = {};
+  for (const [key, pts] of Object.entries(sliced)) {
+    for (const p of pts) {
+      (byDate[p.date] ||= {})[key] = p.value;
+    }
+  }
+  const merged = sortedDates.map((date) => ({ date, ...byDate[date] }));
+  return {
+    merged,
+    firstDate: sortedDates[0],
+    lastDate: sortedDates[sortedDates.length - 1],
+  };
 }
 
 function OverlayTooltip({ active, payload, label }: any) {
@@ -184,33 +166,10 @@ export default function Page() {
 
   const days = RANGES[rangeIdx].days;
 
-  const overlay = useMemo(() => {
-    if (!data) return null;
-    // slice each overlay series to the selected range, normalize to 100
-    const sliced: Record<string, { date: string; value: number }[]> = {};
-    const dates = new Set<string>();
-    for (const { key } of OVERLAY) {
-      const s = data.series[key];
-      if (!s) continue;
-      const rows = s.rows.filter((r) => r.close != null).slice(-days);
-      if (!rows.length) continue;
-      const base = rows[0].close as number;
-      sliced[key] = rows.map((r) => ({
-        date: r.date,
-        value: ((r.close as number) / base) * 100,
-      }));
-      rows.forEach((r) => dates.add(r.date));
-    }
-    const sortedDates = [...dates].sort();
-    const byDate: Record<string, Record<string, number>> = {};
-    for (const [key, pts] of Object.entries(sliced)) {
-      for (const p of pts) {
-        (byDate[p.date] ||= {})[key] = p.value;
-      }
-    }
-    const merged = sortedDates.map((date) => ({ date, ...byDate[date] }));
-    return { merged, firstDate: sortedDates[0], lastDate: sortedDates[sortedDates.length - 1] };
-  }, [data, days]);
+  const overlay = useMemo(
+    () => (data ? buildNormalized(data, OVERLAY, days) : null),
+    [data, days]
+  );
 
   const visibleEvents = useMemo(() => {
     if (!data || !overlay) return [];
@@ -241,16 +200,6 @@ export default function Page() {
     }
     return m;
   }, [overlay, dotEvents]);
-
-  const fxData = useMemo(() => {
-    if (!data) return [];
-    return FX_CARDS.map((key) => {
-      const s = data.series[key];
-      if (!s) return null;
-      const rows = s.rows.filter((r) => r.close != null).slice(-days);
-      return { key, series: s, rows, pct: changePct(rows) };
-    }).filter(Boolean) as { key: string; series: Series; rows: Row[]; pct: number | null }[];
-  }, [data, days]);
 
   const lastDate = overlay?.lastDate ?? "";
 
@@ -430,72 +379,6 @@ export default function Page() {
                   </div>
                 </div>
               )}
-            </section>
-
-            {/* FX + gold line charts */}
-            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-sm font-semibold">汇率与黄金</h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {fxData.map(({ key, series, rows, pct }) => {
-                  const last = rows[rows.length - 1];
-                  const dec = DECIMALS[key] ?? 2;
-                  return (
-                    <div
-                      key={key}
-                      className="rounded-lg border border-slate-200 bg-white p-4"
-                    >
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-sm font-medium">{series.name}</span>
-                        <span className="text-xs">
-                          <Change pct={pct} />
-                        </span>
-                      </div>
-                      <div className="mt-1 font-mono text-lg font-semibold tabular-nums">
-                        {fmt(last?.close, dec)}
-                        <span className="ml-1 text-xs font-normal text-slate-400">
-                          {series.currency}
-                        </span>
-                      </div>
-                      <div className="mt-2 h-[110px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={rows.map((r) => ({ date: r.date, close: r.close }))}
-                            margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
-                          >
-                            <XAxis dataKey="date" hide />
-                            <YAxis hide domain={["auto", "auto"]} />
-                            <Tooltip
-                              content={({ active, payload, label }: any) => {
-                                if (!active || !payload?.length) return null;
-                                return (
-                                  <div className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow">
-                                    <span className="text-slate-500">{label} </span>
-                                    <span className="font-mono font-medium">
-                                      {fmt(payload[0].value, dec)}
-                                    </span>
-                                  </div>
-                                );
-                              }}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="close"
-                              stroke={
-                                OVERLAY.find((o) => o.key === key)?.color ?? "#2563eb"
-                              }
-                              strokeWidth={1.8}
-                              dot={false}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="mt-1 text-[11px] text-slate-400">
-                        {rows[0]?.date} 至 {last?.date}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </section>
 
             <p className="mt-4 text-center text-xs text-slate-400">
