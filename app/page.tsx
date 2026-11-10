@@ -307,25 +307,68 @@ function formatReal(key: string, v: number): string {
   });
 }
 
-function OverlayTooltip({ active, payload, label, bases, events }: any) {
-  if (!active || !payload?.length) return null;
+// Small per-chart log/linear switch (used in each chart card header).
+function AxisToggle({
+  isLog,
+  onChange,
+}: {
+  isLog: boolean;
+  onChange: (log: boolean) => void;
+}) {
+  return (
+    <div className="flex gap-1 rounded-lg bg-slate-100 p-0.5">
+      <button
+        onClick={() => onChange(true)}
+        className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+          isLog ? "bg-slate-900 text-white shadow" : "text-slate-600 hover:bg-white"
+        }`}
+      >
+        对数
+      </button>
+      <button
+        onClick={() => onChange(false)}
+        className={`rounded-md px-2 py-0.5 text-xs font-medium transition ${
+          !isLog ? "bg-slate-900 text-white shadow" : "text-slate-600 hover:bg-white"
+        }`}
+      >
+        线性
+      </button>
+    </div>
+  );
+}
+
+// Tooltip driven by the chart's own rows (not recharts' payload), so a
+// series with no point on the hovered date still shows its last known
+// value (e.g. annual GDP on any date) instead of disappearing.
+function OverlayTooltip({ active, label, bases, events, rows, keys }: any) {
+  if (!active || !label || !rows?.length || !keys?.length) return null;
+  const idx = rows.findIndex((r: any) => r.date === label);
+  if (idx < 0) return null;
   const dayEvents: any[] = events?.[label] ?? [];
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
       <div className="mb-1 font-medium text-slate-700">{label}</div>
-      {payload.map((p: any) => {
-        const base = bases?.[p.dataKey];
-        const pct =
-          p.value != null && base ? (p.value / base - 1) * 100 : null;
+      {keys.map(({ key, color, name }: any) => {
+        // last known value at or before the hovered date
+        let v: number | null = null;
+        for (let i = idx; i >= 0; i--) {
+          const val = rows[i]?.[key];
+          if (typeof val === "number") {
+            v = val;
+            break;
+          }
+        }
+        const base = bases?.[key];
+        const pct = v != null && base ? (v / base - 1) * 100 : null;
         return (
-          <div key={p.dataKey} className="flex items-center gap-2 py-0.5">
+          <div key={key} className="flex items-center gap-2 py-0.5">
             <span
               className="inline-block h-2 w-2 rounded-full"
-              style={{ background: p.stroke }}
+              style={{ background: color }}
             />
-            <span className="w-20 text-slate-500">{p.name}</span>
+            <span className="w-20 text-slate-500">{name}</span>
             <span className="ml-auto font-mono font-medium text-slate-800">
-              {p.value != null ? formatReal(p.dataKey, p.value) : "--"}
+              {v != null ? formatReal(key, v) : "--"}
               {pct != null && (
                 <span className="ml-1 text-slate-400">
                   ({pct >= 0 ? "+" : ""}
@@ -357,8 +400,17 @@ function OverlayTooltip({ active, payload, label, bases, events }: any) {
 export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Linear scale by default; the toggle also shows the log axis.
-  const [logScale, setLogScale] = useState(false);
+  // Per-chart axis scale. Linear crushes small-magnitude series to the
+  // bottom (silver/copper vs gold, EUR/USD vs USD/JPY, GDP vs markets),
+  // so charts with a wide magnitude range default to log; stocks (narrow
+  // range) defaults to linear. Each chart card has its own toggle.
+  const [chartLog, setChartLog] = useState<Record<string, boolean>>({
+    top: true,
+    fx: true,
+    metals: true,
+    gdp: true,
+  });
+  const isLog = (id: string) => chartLog[id] ?? false;
   const [progress, setProgress] = useState<{
     loaded: number;
     total: number | null;
@@ -589,31 +641,6 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-slate-400">纵轴</span>
-              <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
-                <button
-                  onClick={() => setLogScale(true)}
-                  className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                    logScale
-                      ? "bg-slate-900 text-white shadow"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
-                >
-                  对数
-                </button>
-                <button
-                  onClick={() => setLogScale(false)}
-                  className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-                    !logScale
-                      ? "bg-slate-900 text-white shadow"
-                      : "text-slate-600 hover:bg-white"
-                  }`}
-                >
-                  线性
-                </button>
-              </div>
-            </div>
             <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
               {RANGES.map((r, i) => (
                 <button
@@ -776,6 +803,12 @@ export default function Page() {
             <section className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">自选组合（真实值）</h2>
+                <AxisToggle
+                  isLog={isLog("top")}
+                  onChange={(v) =>
+                    setChartLog((p) => ({ ...p, top: v }))
+                  }
+                />
               </div>
               {topKeys.length === 0 ? (
                 <div className="py-8 text-center text-sm text-slate-400">
@@ -821,7 +854,7 @@ export default function Page() {
                         <YAxis
                           tick={{ fontSize: 11, fill: "#64748b" }}
                           domain={["auto", "auto"]}
-                          scale={logScale ? "log" : "linear"}
+                          scale={isLog("top") ? "log" : "linear"}
                           width={64}
                           tickFormatter={(v: number) => formatAxisTickTop(v)}
                         />
@@ -830,6 +863,11 @@ export default function Page() {
                             <OverlayTooltip
                               bases={groups.combined.bases}
                               events={eventsByDate}
+                              rows={groups.combined.merged}
+                              keys={topKeys.map((o) => ({
+                                ...o,
+                                name: data.series[o.key]?.name ?? o.key,
+                              }))}
                             />
                           }
                         />
@@ -935,6 +973,12 @@ export default function Page() {
                             ))}
                           </div>
                         )}
+                        <AxisToggle
+                          isLog={isLog(g.id)}
+                          onChange={(v) =>
+                            setChartLog((p) => ({ ...p, [g.id]: v }))
+                          }
+                        />
                         <button
                           onClick={() => toggleCollapse(g.id)}
                           className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-50"
@@ -969,13 +1013,23 @@ export default function Page() {
                     <YAxis
                       tick={{ fontSize: 11, fill: "#64748b" }}
                       domain={["auto", "auto"]}
-                      scale={logScale ? "log" : "linear"}
+                      scale={isLog(g.id) ? "log" : "linear"}
                       width={64}
                       tickFormatter={(v: number) => formatAxisTick(g.id, v)}
                     />
                     <Tooltip
                       content={
-                        <OverlayTooltip bases={g.bases} events={eventsByDate} />
+                        <OverlayTooltip
+                          bases={g.bases}
+                          events={eventsByDate}
+                          rows={g.merged}
+                          keys={g.keys
+                            .filter((o) => selectedKeys.has(o.key))
+                            .map((o) => ({
+                              ...o,
+                              name: data.series[o.key]?.name ?? o.key,
+                            }))}
+                        />
                       }
                     />
                     {g.keys
@@ -1029,7 +1083,7 @@ export default function Page() {
               })}
 
             <p className="mt-4 text-center text-xs text-slate-400">
-              行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。各组分图真实值、时间轴同步；底部事件轴与图表时间轴对齐。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
+              行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。各组分图真实值、时间轴同步；顶部事件轴与图表时间轴对齐。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
             </p>
           </>
         )}
