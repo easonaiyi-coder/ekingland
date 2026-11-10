@@ -1,120 +1,120 @@
 {
   "range": {
-    "start": "2016-11-10",
+    "start": "1996-11-10",
     "end": "2026-11-10"
   },
   "source": "Yahoo Finance chart API",
-  "fetched_at": "2026-11-10T11:24:49.345028+00:00",
+  "fetched_at": "2026-11-10T11:43:19.771012+00:00",
   "symbols": {
     "sp500": {
       "symbol": "^GSPC",
       "name": "标普500",
-      "rows": 2512,
-      "first": "2016-11-10",
+      "rows": 7544,
+      "first": "1996-11-11",
       "last": "2026-11-09",
       "file": "data/sp500.json"
     },
     "nasdaq": {
       "symbol": "^IXIC",
       "name": "纳斯达克",
-      "rows": 2512,
-      "first": "2016-11-10",
+      "rows": 7544,
+      "first": "1996-11-11",
       "last": "2026-11-09",
       "file": "data/nasdaq.json"
     },
     "dow": {
       "symbol": "^DJI",
       "name": "道琼斯",
-      "rows": 2512,
-      "first": "2016-11-10",
+      "rows": 7544,
+      "first": "1996-11-11",
       "last": "2026-11-09",
       "file": "data/dow.json"
     },
     "nikkei": {
       "symbol": "^N225",
       "name": "日经225",
-      "rows": 2441,
-      "first": "2016-11-10",
+      "rows": 7349,
+      "first": "1996-11-11",
       "last": "2026-11-10",
       "file": "data/nikkei.json"
     },
     "hsi": {
       "symbol": "^HSI",
       "name": "恒生指数",
-      "rows": 2459,
-      "first": "2016-11-10",
+      "rows": 7389,
+      "first": "1996-11-11",
       "last": "2026-11-09",
       "file": "data/hsi.json"
     },
     "sse": {
       "symbol": "000001.SS",
       "name": "上证指数",
-      "rows": 2425,
-      "first": "2016-11-10",
+      "rows": 7108,
+      "first": "1997-07-02",
       "last": "2026-11-09",
       "file": "data/sse.json"
     },
     "gold": {
       "symbol": "GC=F",
       "name": "黄金期货",
-      "rows": 2513,
-      "first": "2016-11-10",
+      "rows": 6572,
+      "first": "2000-08-30",
       "last": "2026-11-09",
       "file": "data/gold.json"
     },
     "dxy": {
       "symbol": "DX-Y.NYB",
       "name": "美元指数",
-      "rows": 2513,
-      "first": "2016-11-10",
+      "rows": 7599,
+      "first": "1996-11-11",
       "last": "2026-11-09",
       "file": "data/dxy.json"
     },
     "usdcny": {
       "symbol": "CNY=X",
       "name": "美元/人民币",
-      "rows": 2600,
-      "first": "2016-11-10",
+      "rows": 6355,
+      "first": "2001-06-24",
       "last": "2026-11-10",
       "file": "data/usdcny.json"
     },
     "usdjpy": {
       "symbol": "JPY=X",
       "name": "美元/日元",
-      "rows": 2601,
-      "first": "2016-11-10",
+      "rows": 7781,
+      "first": "1996-11-11",
       "last": "2026-11-10",
       "file": "data/usdjpy.json"
     },
     "eurusd": {
       "symbol": "EURUSD=X",
       "name": "欧元/美元",
-      "rows": 2601,
-      "first": "2016-11-10",
+      "rows": 5953,
+      "first": "2003-12-01",
       "last": "2026-11-10",
       "file": "data/eurusd.json"
     },
     "gbpusd": {
       "symbol": "GBPUSD=X",
       "name": "英镑/美元",
-      "rows": 2601,
-      "first": "2016-11-10",
+      "rows": 5965,
+      "first": "2003-12-01",
       "last": "2026-11-10",
       "file": "data/gbpusd.json"
     },
     "usdhkd": {
       "symbol": "HKD=X",
       "name": "美元/港币",
-      "rows": 2601,
-      "first": "2016-11-10",
+      "rows": 6411,
+      "first": "2001-07-15",
       "last": "2026-11-10",
       "file": "data/usdhkd.json"
     },
     "csi300": {
       "symbol": "000300",
       "name": "沪深300",
-      "rows": 2428,
-      "first": "2016-11-10",
+      "rows": 5306,
+      "first": "2005-01-04",
       "last": "2026-11-10",
       "file": "data/csi300.json",
       "source": "Eastmoney"
@@ -122,11 +122,110 @@
     "cnyjpy": {
       "symbol": "CNYJPY=X",
       "name": "人民币/日元",
-      "rows": 2602,
-      "first": "2016-11-10",
+      "rows": 4799,
+      "first": "2008-05-13",
       "last": "2026-11-10",
       "file": "data/cnyjpy.json"
+    },
+    "gdp_usa": {
+      "symbol": "USA",
+      "name": "美国GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_usa.json",
+      "source": "World Bank"
+    },
+    "gdp_chn": {
+      "symbol": "CHN",
+      "name": "中国GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_chn.json",
+      "source": "World Bank"
+    },
+    "gdp_jpn": {
+      "symbol": "JPN",
+      "name": "日本GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_jpn.json",
+      "source": "World Bank"
+    },
+    "gdp_deu": {
+      "symbol": "DEU",
+      "name": "德国GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_deu.json",
+      "source": "World Bank"
+    },
+    "gdp_ind": {
+      "symbol": "IND",
+      "name": "印度GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_ind.json",
+      "source": "World Bank"
+    },
+    "gdp_gbr": {
+      "symbol": "GBR",
+      "name": "英国GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_gbr.json",
+      "source": "World Bank"
+    },
+    "gdp_fra": {
+      "symbol": "FRA",
+      "name": "法国GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_fra.json",
+      "source": "World Bank"
+    },
+    "gdp_ita": {
+      "symbol": "ITA",
+      "name": "意大利GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_ita.json",
+      "source": "World Bank"
+    },
+    "gdp_can": {
+      "symbol": "CAN",
+      "name": "加拿大GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_can.json",
+      "source": "World Bank"
+    },
+    "gdp_bra": {
+      "symbol": "BRA",
+      "name": "巴西GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_bra.json",
+      "source": "World Bank"
+    },
+    "gdp_wld": {
+      "symbol": "WLD",
+      "name": "全球GDP",
+      "rows": 30,
+      "first": "1996-12-31",
+      "last": "2025-12-31",
+      "file": "data/gdp_wld.json",
+      "source": "World Bank"
     }
   },
-  "last_update": "2026-11-10T11:25:33.582264+00:00"
+  "last_update": "2026-11-10T11:45:29.835097+00:00"
 }
