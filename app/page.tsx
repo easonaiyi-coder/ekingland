@@ -61,6 +61,17 @@ const OVERLAY: { key: string; color: string }[] = [
   { key: "eurusd", color: "#f59e0b" },
   { key: "gbpusd", color: "#0ea5e9" },
   { key: "usdhkd", color: "#a3e635" },
+  { key: "gdp_usa", color: "#0e7490" },
+  { key: "gdp_chn", color: "#b91c1c" },
+  { key: "gdp_jpn", color: "#a16207" },
+  { key: "gdp_deu", color: "#4d7c0f" },
+  { key: "gdp_ind", color: "#9d174d" },
+  { key: "gdp_gbr", color: "#1e40af" },
+  { key: "gdp_fra", color: "#6d28d9" },
+  { key: "gdp_ita", color: "#0f766e" },
+  { key: "gdp_can", color: "#b45309" },
+  { key: "gdp_bra", color: "#15803d" },
+  { key: "gdp_wld", color: "#111827" },
 ];
 
 const CATEGORIES: { id: string; label: string; keys: string[] }[] = [
@@ -75,6 +86,23 @@ const CATEGORIES: { id: string; label: string; keys: string[] }[] = [
     keys: ["usdcny", "usdjpy", "cnyjpy", "eurusd", "gbpusd", "usdhkd", "dxy"],
   },
   { id: "metals", label: "贵金属", keys: ["gold"] },
+  {
+    id: "gdp",
+    label: "GDP",
+    keys: [
+      "gdp_usa",
+      "gdp_chn",
+      "gdp_jpn",
+      "gdp_deu",
+      "gdp_ind",
+      "gdp_gbr",
+      "gdp_fra",
+      "gdp_ita",
+      "gdp_can",
+      "gdp_bra",
+      "gdp_wld",
+    ],
+  },
 ];
 
 // auto-categorize: anything not listed above falls into 其他
@@ -136,6 +164,7 @@ const RANGES = [
   { label: "1年", days: 252 },
   { label: "3年", days: 756 },
   { label: "10年", days: 2520 },
+  { label: "30年", days: 7560 },
 ];
 
 const DOT_CATEGORIES = new Set(["election", "fed", "war", "policy"]);
@@ -222,7 +251,7 @@ function OverlayTooltip({ active, payload, label }: any) {
 export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rangeIdx, setRangeIdx] = useState(5);
+  const [rangeIdx, setRangeIdx] = useState(6);
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
@@ -234,7 +263,7 @@ export default function Page() {
     setMounted(true);
   }, []);
   const [visibleCats, setVisibleCats] = useState<Set<string>>(
-    new Set(["stocks", "fx", "metals", "other"])
+    new Set(["stocks", "fx", "metals", "gdp", "other"])
   );
 
   // categories actually present (其他 only shows when something is uncategorized)
@@ -528,7 +557,7 @@ export default function Page() {
             </section>
 
             <p className="mt-4 text-center text-xs text-slate-400">
-              数据来自公开行情接口（Yahoo Finance / 东财），日线，每日收盘后更新；图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
+              行情来自公开接口（Yahoo Finance / 东财），日线，每日收盘后更新；GDP 为世界银行年度名义美元值（1996–2025）。图表可按日/周/月/季/年聚合显示。仅供参考，不构成投资建议。
             </p>
           </>
         )}

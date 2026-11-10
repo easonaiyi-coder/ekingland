@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 
 // Yahoo Finance chart API (no key) for everything except CSI 300,
-// which Yahoo has no history for — Eastmoney kline instead.
+// which Yahoo has no history for — Eastmoney kline instead — and GDP,
+// which comes from the World Bank API (annual, nominal US$).
 // Falls back per-symbol to the bundled JSON in public/data when the
 // live fetch fails, so the page always renders something.
 const SERIES: {
@@ -11,7 +12,7 @@ const SERIES: {
   symbol: string;
   name: string;
   currency: string;
-  source: "yahoo" | "eastmoney";
+  source: "yahoo" | "eastmoney" | "worldbank";
 }[] = [
   { key: "sp500", symbol: "^GSPC", name: "标普500", currency: "USD", source: "yahoo" },
   { key: "nasdaq", symbol: "^IXIC", name: "纳斯达克", currency: "USD", source: "yahoo" },
@@ -28,9 +29,21 @@ const SERIES: {
   { key: "eurusd", symbol: "EURUSD=X", name: "欧元/美元", currency: "USD", source: "yahoo" },
   { key: "gbpusd", symbol: "GBPUSD=X", name: "英镑/美元", currency: "USD", source: "yahoo" },
   { key: "usdhkd", symbol: "HKD=X", name: "美元/港币", currency: "HKD", source: "yahoo" },
+  // annual nominal GDP, World Bank NY.GDP.MKTP.CD, current US$
+  { key: "gdp_usa", symbol: "USA", name: "美国GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_chn", symbol: "CHN", name: "中国GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_jpn", symbol: "JPN", name: "日本GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_deu", symbol: "DEU", name: "德国GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_ind", symbol: "IND", name: "印度GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_gbr", symbol: "GBR", name: "英国GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_fra", symbol: "FRA", name: "法国GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_ita", symbol: "ITA", name: "意大利GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_can", symbol: "CAN", name: "加拿大GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_bra", symbol: "BRA", name: "巴西GDP", currency: "USD", source: "worldbank" },
+  { key: "gdp_wld", symbol: "WLD", name: "全球GDP", currency: "USD", source: "worldbank" },
 ];
 
-const START = "2016-11-10";
+const START = "1996-11-10";
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
@@ -93,7 +106,7 @@ async function fetchYahoo(symbol: string) {
 async function fetchCsi300() {
   const end = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const d = await fetchJson(
-    `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300&klt=101&fqt=1&beg=20161110&end=${end}&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57`
+    `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300&klt=101&fqt=1&beg=19961110&end=${end}&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57`
   );
   const rows = [];
   for (const k of d.data.klines as string[]) {
@@ -110,6 +123,27 @@ async function fetchCsi300() {
   return rows;
 }
 
+async function fetchWorldBank(code: string) {
+  const d = await fetchJson(
+    `https://api.worldbank.org/v2/country/${code}/indicator/NY.GDP.MKTP.CD?format=json&date=1996:2025&per_page=100`
+  );
+  const rows = [];
+  for (const item of d[1] || []) {
+    if (item?.value == null) continue;
+    const v = item.value as number;
+    rows.push({
+      date: `${item.date}-12-31`,
+      open: v,
+      high: v,
+      low: v,
+      close: v,
+      volume: null,
+    });
+  }
+  rows.sort((a, b) => (a.date < b.date ? -1 : 1));
+  return rows;
+}
+
 export async function GET() {
   if (cache && Date.now() - cache.at < CACHE_TTL) {
     return NextResponse.json(cache.data);
@@ -120,7 +154,11 @@ export async function GET() {
     SERIES.map(async (s) => {
       try {
         const rows =
-          s.source === "eastmoney" ? await fetchCsi300() : await fetchYahoo(s.symbol);
+          s.source === "eastmoney"
+            ? await fetchCsi300()
+            : s.source === "worldbank"
+              ? await fetchWorldBank(s.symbol)
+              : await fetchYahoo(s.symbol);
         series[s.key] = {
           key: s.key,
           symbol: s.symbol,
