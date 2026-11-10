@@ -1,18 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+const COOKIE =
+  "ekingland_auth=1; path=/; max-age=315360000; SameSite=Lax";
 
 export default function Login() {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
   const router = useRouter();
 
+  // Permanent: a previous successful login is kept in localStorage
+  // (no expiry). If the cookie has lapsed, restore it silently.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("ekingland_auth") === "1") {
+        document.cookie = COOKIE;
+        router.push("/");
+        router.refresh();
+      }
+    } catch {
+      // storage unavailable: fall through to the password form
+    }
+  }, [router]);
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (pw === "ekingland") {
-      document.cookie =
-        "ekingland_auth=1; path=/; max-age=31536000; SameSite=Lax";
+      try {
+        localStorage.setItem("ekingland_auth", "1");
+      } catch {
+        // ignore
+      }
+      document.cookie = COOKIE;
       router.push("/");
       router.refresh();
     } else {
