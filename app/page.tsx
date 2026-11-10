@@ -173,6 +173,13 @@ export default function Page() {
   const [rangeIdx, setRangeIdx] = useState(3);
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
+  // recharts measures its container in the browser; rendering the chart
+  // on the server produces different markup and a hydration mismatch,
+  // so the chart section only renders after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [visibleCats, setVisibleCats] = useState<Set<string>>(
     new Set(["stocks", "fx", "metals", "other"])
   );
@@ -291,7 +298,7 @@ export default function Page() {
           </div>
         )}
 
-        {data && overlay && (
+        {mounted && data && overlay && (
           <>
             {/* overlay chart */}
             <section className="mb-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
