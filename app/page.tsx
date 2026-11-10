@@ -197,13 +197,28 @@ function buildNormalized(
 ) {
   const sliced: Record<string, { date: string; value: number }[]> = {};
   const dates = new Set<string>();
+  // The window is defined by the daily series: their last `days` rows.
+  // Annual series (GDP: 30 rows) must NOT be sliced by row count — that
+  // would keep their whole 30-year history inside a 1-year view and blow
+  // up the y-axis. Filter every series by the window's calendar start
+  // date instead, and normalize to the first value inside the window.
+  const DAILY_MIN_ROWS = 252; // GDP has 30 rows; every daily series has 4700+
+  let windowStart = "";
   for (const { key } of keys) {
     const s = data.series[key];
     if (!s) continue;
-    const rows = resampleRows(
-      s.rows.filter((r) => r.close != null).slice(-days),
-      granularity
+    const rows = s.rows.filter((r) => r.close != null);
+    if (rows.length <= DAILY_MIN_ROWS) continue;
+    const first = rows.slice(-days)[0]?.date;
+    if (first && (!windowStart || first < windowStart)) windowStart = first;
+  }
+  for (const { key } of keys) {
+    const s = data.series[key];
+    if (!s) continue;
+    const inWindow = s.rows.filter(
+      (r) => r.close != null && (!windowStart || r.date >= windowStart)
     );
+    const rows = resampleRows(inWindow, granularity);
     if (!rows.length) continue;
     const base = rows[0].close as number;
     sliced[key] = rows.map((r) => ({
@@ -433,15 +448,19 @@ export default function Page() {
                 ))}
               </div>
               <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-                {visibleKeys.map(({ key, color }) => (
-                  <span key={key} className="flex items-center gap-1.5">
-                    <span
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: color }}
-                    />
-                    {data.series[key]?.name ?? key}
-                  </span>
-                ))}
+                {visibleKeys
+                  .filter(({ key }) =>
+                    overlay.merged.some((r) => typeof (r as any)[key] === "number")
+                  )
+                  .map(({ key, color }) => (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block h-2 w-2 rounded-full"
+                        style={{ background: color }}
+                      />
+                      {data.series[key]?.name ?? key}
+                    </span>
+                  ))}
               </div>
               <div className="h-[380px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
