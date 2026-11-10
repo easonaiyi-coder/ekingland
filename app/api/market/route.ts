@@ -30,7 +30,7 @@ const SERIES: {
   { key: "usdhkd", symbol: "HKD=X", name: "美元/港币", currency: "HKD", source: "yahoo" },
 ];
 
-const START = "2023-11-10";
+const START = "2016-11-10";
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
@@ -93,7 +93,7 @@ async function fetchYahoo(symbol: string) {
 async function fetchCsi300() {
   const end = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const d = await fetchJson(
-    `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300&klt=101&fqt=1&beg=20231110&end=${end}&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57`
+    `https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.000300&klt=101&fqt=1&beg=20161110&end=${end}&fields1=f1,f2,f3,f4,f5&fields2=f51,f52,f53,f54,f55,f56,f57`
   );
   const rows = [];
   for (const k of d.data.klines as string[]) {

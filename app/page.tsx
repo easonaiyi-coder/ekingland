@@ -88,6 +88,8 @@ const RANGES = [
   { label: "3个月", days: 66 },
   { label: "6个月", days: 132 },
   { label: "1年", days: 252 },
+  { label: "3年", days: 756 },
+  { label: "10年", days: 2520 },
 ];
 
 const DOT_CATEGORIES = new Set(["election", "fed", "war", "policy"]);
@@ -170,7 +172,7 @@ function OverlayTooltip({ active, payload, label }: any) {
 export default function Page() {
   const [data, setData] = useState<MarketData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [rangeIdx, setRangeIdx] = useState(3);
+  const [rangeIdx, setRangeIdx] = useState(5);
   const [selectedEvent, setSelectedEvent] = useState<MarketEvent | null>(null);
   const [showEvents, setShowEvents] = useState(true);
   // recharts measures its container in the browser; rendering the chart
