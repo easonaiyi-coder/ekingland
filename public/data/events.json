@@ -1,0 +1,785 @@
+{
+  "range": {
+    "start": "2023-11-10",
+    "end": "2026-11-10"
+  },
+  "events": [
+    {
+      "date": "2023-11-14",
+      "category": "cpi",
+      "title": "美国CPI公布（10月数据）",
+      "note": "美国劳工统计局公布10月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2023-12-08",
+      "category": "nfp",
+      "title": "美国非农就业公布（11月数据）",
+      "note": "美国劳工统计局公布11月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2023-12-12",
+      "category": "cpi",
+      "title": "美国CPI公布（11月数据）",
+      "note": "美国劳工统计局公布11月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2023-12-13",
+      "category": "fed",
+      "title": "美联储按兵不动、释放鸽派转向信号",
+      "note": "利率维持5.25%-5.50%，点阵图显示2024年降息3次，市场解读为加息周期结束，美债收益率大跌、美股上涨。",
+      "source": "Butler Financial"
+    },
+    {
+      "date": "2024-01-05",
+      "category": "nfp",
+      "title": "美国非农就业公布（2023年12月数据）",
+      "note": "美国劳工统计局公布2023年12月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-01-11",
+      "category": "cpi",
+      "title": "美国CPI公布（2023年12月数据）",
+      "note": "美国劳工统计局公布2023年12月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-01-12",
+      "category": "war",
+      "title": "美英空袭也门胡塞武装",
+      "note": "胡塞武装持续袭击红海商船后，美英首次直接空袭也门境内目标，布伦特原油盘中涨超4%。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2024-02-02",
+      "category": "nfp",
+      "title": "美国非农就业公布（1月数据）",
+      "note": "美国劳工统计局公布1月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-02-13",
+      "category": "cpi",
+      "title": "美国CPI公布（1月数据）",
+      "note": "美国劳工统计局公布1月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-03-08",
+      "category": "nfp",
+      "title": "美国非农就业公布（2月数据）",
+      "note": "美国劳工统计局公布2月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-03-12",
+      "category": "cpi",
+      "title": "美国CPI公布（2月数据）",
+      "note": "美国劳工统计局公布2月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-04-05",
+      "category": "nfp",
+      "title": "美国非农就业公布（3月数据）",
+      "note": "美国劳工统计局公布3月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-04-10",
+      "category": "cpi",
+      "title": "美国CPI公布（3月数据）",
+      "note": "美国劳工统计局公布3月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-04-13",
+      "category": "war",
+      "title": "伊朗首次直接袭击以色列",
+      "note": "伊朗为报复驻大马士革领馆遇袭，从本土发射约300架无人机和导弹直袭以色列，影子战争首次变为国家间直接交火。",
+      "source": "AFP"
+    },
+    {
+      "date": "2024-05-03",
+      "category": "nfp",
+      "title": "美国非农就业公布（4月数据）",
+      "note": "美国劳工统计局公布4月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-05-15",
+      "category": "cpi",
+      "title": "美国CPI公布（4月数据）",
+      "note": "美国劳工统计局公布4月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-06-04",
+      "category": "election",
+      "title": "印度大选：莫迪连任但人民党失单独多数",
+      "note": "人民党仅获240席，未达272席单独多数，须依赖执政联盟，结果远逊出口民调预期，印度股市当日大跌。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2024-06-07",
+      "category": "nfp",
+      "title": "美国非农就业公布（5月数据）",
+      "note": "美国劳工统计局公布5月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-06-12",
+      "category": "cpi",
+      "title": "美国CPI公布（5月数据）",
+      "note": "美国劳工统计局公布5月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-07-04",
+      "category": "election",
+      "title": "英国大选：工党压倒性胜选",
+      "note": "工党赢得412席，终结保守党14年执政，英镑及英股对政权平稳交接反应温和。",
+      "source": "BBC"
+    },
+    {
+      "date": "2024-07-05",
+      "category": "nfp",
+      "title": "美国非农就业公布（6月数据）",
+      "note": "美国劳工统计局公布6月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-07-07",
+      "category": "election",
+      "title": "法国立法选举：左翼联盟意外领先",
+      "note": "第二轮左翼“新人民阵线”获最多席位，无人过半，欧元当日下跌，法国国债利差走阔。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2024-07-11",
+      "category": "cpi",
+      "title": "美国CPI公布（6月数据）",
+      "note": "美国劳工统计局公布6月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-07-31",
+      "category": "policy",
+      "title": "日本央行加息至0.25%",
+      "note": "日本央行将政策利率从0-0.1%上调至0.25%，并计划将月度购债规模减半，日元走强，为日元套息交易平仓埋下伏笔。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2024-08-02",
+      "category": "nfp",
+      "title": "美国非农就业公布（7月数据）",
+      "note": "美国劳工统计局公布7月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-08-05",
+      "category": "policy",
+      "title": "全球股灾：日经225单日暴跌12.4%",
+      "note": "日经225收跌4451点，创1987年“黑色星期一”以来最大单日跌幅，日元急升引发套息交易踩踏，全球股市同步大跌、VIX飙升。",
+      "source": "NHK"
+    },
+    {
+      "date": "2024-08-06",
+      "category": "war",
+      "title": "乌克兰突袭俄罗斯库尔斯克州",
+      "note": "乌军越境攻入俄本土库尔斯克州并一度占领约1000平方公里，是二战后俄本土首次被外国军队占领。",
+      "source": "Al Jazeera"
+    },
+    {
+      "date": "2024-08-14",
+      "category": "cpi",
+      "title": "美国CPI公布（7月数据）",
+      "note": "美国劳工统计局公布7月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-09-06",
+      "category": "nfp",
+      "title": "美国非农就业公布（8月数据）",
+      "note": "美国劳工统计局公布8月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-09-11",
+      "category": "cpi",
+      "title": "美国CPI公布（8月数据）",
+      "note": "美国劳工统计局公布8月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-09-18",
+      "category": "fed",
+      "title": "美联储降息50基点、启动降息周期",
+      "note": "降息50基点至4.75%-5.00%，为2020年3月以来首次降息，鲍威尔称旨在防范就业市场进一步降温。",
+      "source": "ABA Banking Journal"
+    },
+    {
+      "date": "2024-09-24",
+      "category": "policy",
+      "title": "中国央行推出大规模刺激",
+      "note": "中国人民银行宣布降准0.5个百分点、下调存量房贷利率及首付比例，并创设股市支持工具，沪深及恒生指数当日涨超4%。",
+      "source": "BBC"
+    },
+    {
+      "date": "2024-10-01",
+      "category": "war",
+      "title": "伊朗大规模导弹袭击以色列",
+      "note": "伊朗发射约180-200枚弹道导弹报复哈马斯、真主党领导人遇刺，规模近4月两倍，油价当日大涨。",
+      "source": "Al Jazeera"
+    },
+    {
+      "date": "2024-10-04",
+      "category": "nfp",
+      "title": "美国非农就业公布（9月数据）",
+      "note": "美国劳工统计局公布9月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-10-10",
+      "category": "cpi",
+      "title": "美国CPI公布（9月数据）",
+      "note": "美国劳工统计局公布9月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-10-26",
+      "category": "war",
+      "title": "以色列报复空袭伊朗本土",
+      "note": "以色列空袭伊朗导弹制造和防空设施报复10月1日袭击，但刻意未打核设施和油田，油价随后回落。",
+      "source": "The Hindu"
+    },
+    {
+      "date": "2024-11-01",
+      "category": "nfp",
+      "title": "美国非农就业公布（10月数据）",
+      "note": "美国劳工统计局公布10月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-11-05",
+      "category": "election",
+      "title": "美国总统大选：特朗普胜选",
+      "note": "特朗普击败哈里斯，共和党同时夺回参议院，“特朗普交易”推动美元、美股上涨，美债收益率上行。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2024-11-07",
+      "category": "fed",
+      "title": "美联储再降息25基点",
+      "note": "降息25基点至4.50%-4.75%，为连续第二次降息，时值美国大选后首次会议。",
+      "source": "MBA Newslink"
+    },
+    {
+      "date": "2024-11-13",
+      "category": "cpi",
+      "title": "美国CPI公布（10月数据）",
+      "note": "美国劳工统计局公布10月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-12-06",
+      "category": "nfp",
+      "title": "美国非农就业公布（11月数据）",
+      "note": "美国劳工统计局公布11月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-12-11",
+      "category": "cpi",
+      "title": "美国CPI公布（11月数据）",
+      "note": "美国劳工统计局公布11月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2024-12-18",
+      "category": "fed",
+      "title": "美联储降息25基点、鹰派降息",
+      "note": "降息25基点至4.25%-4.50%，但点阵图将2025年预期降息次数从4次砍至2次，市场大跌。",
+      "source": "Commerzbank"
+    },
+    {
+      "date": "2025-01-03",
+      "category": "nfp",
+      "title": "美国非农就业公布（2024年12月数据）",
+      "note": "美国劳工统计局公布2024年12月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-01-15",
+      "category": "cpi",
+      "title": "美国CPI公布（2024年12月数据）",
+      "note": "美国劳工统计局公布2024年12月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-01-20",
+      "category": "election",
+      "title": "特朗普就职，第二任期开始",
+      "note": "特朗普宣誓就任第47任总统，当日签署大批行政令，市场开始定价关税、移民与能源政策转向。",
+      "source": "AP"
+    },
+    {
+      "date": "2025-02-01",
+      "category": "policy",
+      "title": "美国宣布对加墨中加征关税",
+      "note": "特朗普签署行政令，对加拿大、墨西哥商品加征25%、对中国商品加征10%，三国随即宣布报复，贸易战正式开打。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-02-07",
+      "category": "nfp",
+      "title": "美国非农就业公布（1月数据）",
+      "note": "美国劳工统计局公布1月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-02-12",
+      "category": "cpi",
+      "title": "美国CPI公布（1月数据）",
+      "note": "美国劳工统计局公布1月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-02-23",
+      "category": "election",
+      "title": "德国大选：基民盟胜选",
+      "note": "基民盟/基社盟得票28.5%居首，极右翼AfD以约20.5%创战后最佳纪录，组阁谈判漫长，德国财政与国防支出预期成为市场焦点。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-03-03",
+      "category": "war",
+      "title": "美国暂停对乌克兰军事援助",
+      "note": "特朗普与泽连斯基白宫公开争吵后，美国暂停全部对乌军援并启动复核，标志着美国对乌政策根本转向。",
+      "source": "NPR / Reuters"
+    },
+    {
+      "date": "2025-03-04",
+      "category": "policy",
+      "title": "美对加墨中关税正式生效",
+      "note": "美国对加墨25%关税及对华追加10%关税生效，加拿大立即对300亿加元美国商品报复，美股下跌。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-03-07",
+      "category": "nfp",
+      "title": "美国非农就业公布（2月数据）",
+      "note": "美国劳工统计局公布2月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-03-12",
+      "category": "cpi",
+      "title": "美国CPI公布（2月数据）",
+      "note": "美国劳工统计局公布2月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-04-02",
+      "category": "policy",
+      "title": "“解放日”：美国宣布全球对等关税",
+      "note": "特朗普宣布对所有进口征收10%基准关税，并对中国（34%）、欧盟（20%）等征收更高对等关税，全球股市随后数日暴跌。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-04-04",
+      "category": "nfp",
+      "title": "美国非农就业公布（3月数据）",
+      "note": "美国劳工统计局公布3月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-04-09",
+      "category": "policy",
+      "title": "关税90天暂停、对华加至125%",
+      "note": "特朗普宣布对未报复国家暂停对等关税90天并降至10%，同时将对华关税提至125%，道指当日大涨约2900点。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-04-10",
+      "category": "cpi",
+      "title": "美国CPI公布（3月数据）",
+      "note": "美国劳工统计局公布3月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-04-28",
+      "category": "election",
+      "title": "加拿大联邦大选：卡尼率自由党胜选",
+      "note": "自由党在特朗普关税与“吞并”言论引发的反美情绪中逆转胜选，但未获多数，加元聚焦对美关税谈判。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-05-02",
+      "category": "nfp",
+      "title": "美国非农就业公布（4月数据）",
+      "note": "美国劳工统计局公布4月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-05-12",
+      "category": "policy",
+      "title": "美中日内瓦协议：关税大幅下调90天",
+      "note": "美中达成协议，美国对华关税从145%降至30%，中国对美关税从125%降至10%，为期90天，全球股市反弹。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-05-13",
+      "category": "cpi",
+      "title": "美国CPI公布（4月数据）",
+      "note": "美国劳工统计局公布4月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-06-06",
+      "category": "nfp",
+      "title": "美国非农就业公布（5月数据）",
+      "note": "美国劳工统计局公布5月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-06-11",
+      "category": "cpi",
+      "title": "美国CPI公布（5月数据）",
+      "note": "美国劳工统计局公布5月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-06-13",
+      "category": "war",
+      "title": "以色列空袭伊朗，12日战争爆发",
+      "note": "以色列大规模空袭伊朗核设施和军方高层，伊朗随即导弹还击，布伦特原油单日大涨，霍尔木兹海峡封锁担忧主导市场。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-06-22",
+      "category": "war",
+      "title": "美国轰炸伊朗三处核设施",
+      "note": "美国B-2轰炸福尔多、纳坦兹、伊斯法罕核设施，美国首次直接参战，伊朗随后袭击卡塔尔美军基地。",
+      "source": "Al Jazeera"
+    },
+    {
+      "date": "2025-07-03",
+      "category": "nfp",
+      "title": "美国非农就业公布（6月数据）",
+      "note": "美国劳工统计局公布6月非农就业报告，独立日假期，提前至周四发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-07-15",
+      "category": "cpi",
+      "title": "美国CPI公布（6月数据）",
+      "note": "美国劳工统计局公布6月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-08-01",
+      "category": "nfp",
+      "title": "美国非农就业公布（7月数据）",
+      "note": "美国劳工统计局公布7月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-08-12",
+      "category": "cpi",
+      "title": "美国CPI公布（7月数据）",
+      "note": "美国劳工统计局公布7月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-09-05",
+      "category": "nfp",
+      "title": "美国非农就业公布（8月数据）",
+      "note": "美国劳工统计局公布8月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-09-11",
+      "category": "cpi",
+      "title": "美国CPI公布（8月数据）",
+      "note": "美国劳工统计局公布8月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-09-17",
+      "category": "fed",
+      "title": "美联储年内首次降息25基点",
+      "note": "降息25基点至4.00%-4.25%，为2025年首次降息，理由是就业下行风险上升。",
+      "source": "The Straits Times"
+    },
+    {
+      "date": "2025-10-01",
+      "category": "policy",
+      "title": "美国联邦政府停摆开始",
+      "note": "国会未能通过拨款法案，联邦政府自10月1日起停摆，持续43天创历史最长纪录，并扰乱经济数据发布。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2025-10-10",
+      "category": "war",
+      "title": "加沙停火生效",
+      "note": "以哈第一阶段停火协议生效，以军开始撤出加沙部分地区并启动人质交换，两年战争暂停，中东战争风险溢价回落。",
+      "source": "The Hindu"
+    },
+    {
+      "date": "2025-10-24",
+      "category": "cpi",
+      "title": "美国CPI公布（9月数据）",
+      "note": "美国劳工统计局公布9月消费者价格指数（CPI），因联邦政府停摆推迟发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-10-29",
+      "category": "fed",
+      "title": "美联储再降息25基点、宣布12月结束缩表",
+      "note": "降息25基点至3.75%-4.00%，并宣布自12月1日起停止缩减资产负债表。",
+      "source": "MBA Newslink"
+    },
+    {
+      "date": "2025-11-20",
+      "category": "nfp",
+      "title": "美国非农就业公布（9月数据）",
+      "note": "美国劳工统计局公布9月非农就业报告，因联邦政府停摆推迟六周发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-12-10",
+      "category": "fed",
+      "title": "美联储年内第三次降息25基点",
+      "note": "降息25基点至3.50%-3.75%，利率降至2022年以来最低，三人投反对票。",
+      "source": "CoinDesk"
+    },
+    {
+      "date": "2025-12-16",
+      "category": "nfp",
+      "title": "美国非农就业公布（11月数据）",
+      "note": "美国劳工统计局公布11月非农就业报告，与10月非农合并发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2025-12-18",
+      "category": "cpi",
+      "title": "美国CPI公布（11月数据）",
+      "note": "美国劳工统计局公布11月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-01-03",
+      "category": "war",
+      "title": "美国突袭委内瑞拉、抓获马杜罗",
+      "note": "美军在加拉加斯实施行动抓获总统马杜罗夫妇并押往纽约，委内瑞拉石油供应和政权更迭预期冲击油价及拉美资产。",
+      "source": "Reuters"
+    },
+    {
+      "date": "2026-01-09",
+      "category": "nfp",
+      "title": "美国非农就业公布（2025年12月数据）",
+      "note": "美国劳工统计局公布2025年12月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-01-13",
+      "category": "cpi",
+      "title": "美国CPI公布（2025年12月数据）",
+      "note": "美国劳工统计局公布2025年12月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-02-11",
+      "category": "nfp",
+      "title": "美国非农就业公布（1月数据）",
+      "note": "美国劳工统计局公布1月非农就业报告，因短期政府停摆推迟至周三发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-02-13",
+      "category": "cpi",
+      "title": "美国CPI公布（1月数据）",
+      "note": "美国劳工统计局公布1月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-02-20",
+      "category": "policy",
+      "title": "美国最高法院裁定特朗普全球关税违宪",
+      "note": "最高法院6-3裁定特朗普依据《国际紧急经济权力法》征收的对等关税越权，特朗普随即改用其他法律授权征收临时10%全球关税。",
+      "source": "Weil / US Supreme Court"
+    },
+    {
+      "date": "2026-02-28",
+      "category": "war",
+      "title": "美以再袭伊朗，战争重启",
+      "note": "美以在日内瓦谈判后两天再次联合空袭伊朗，伊朗最高领袖哈梅内伊在首轮袭击中身亡，油价和全球避险情绪急剧升温。",
+      "source": "Al Jazeera"
+    },
+    {
+      "date": "2026-03-06",
+      "category": "nfp",
+      "title": "美国非农就业公布（2月数据）",
+      "note": "美国劳工统计局公布2月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-03-11",
+      "category": "cpi",
+      "title": "美国CPI公布（2月数据）",
+      "note": "美国劳工统计局公布2月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-04-03",
+      "category": "nfp",
+      "title": "美国非农就业公布（3月数据）",
+      "note": "美国劳工统计局公布3月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-04-10",
+      "category": "cpi",
+      "title": "美国CPI公布（3月数据）",
+      "note": "美国劳工统计局公布3月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-05-08",
+      "category": "nfp",
+      "title": "美国非农就业公布（4月数据）",
+      "note": "美国劳工统计局公布4月非农就业报告，按修订后的BLS日历，顺延至第二周周五。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-05-12",
+      "category": "cpi",
+      "title": "美国CPI公布（4月数据）",
+      "note": "美国劳工统计局公布4月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-06-05",
+      "category": "nfp",
+      "title": "美国非农就业公布（5月数据）",
+      "note": "美国劳工统计局公布5月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-06-10",
+      "category": "cpi",
+      "title": "美国CPI公布（5月数据）",
+      "note": "美国劳工统计局公布5月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-06-17",
+      "category": "fed",
+      "title": "美联储按兵不动、新主席沃什首秀鹰派转向",
+      "note": "维持3.50%-3.75%，新主席沃什首次主持会议，点阵图年内利率中值上移，市场解读为政策转向收紧。",
+      "source": "Chase"
+    },
+    {
+      "date": "2026-07-02",
+      "category": "nfp",
+      "title": "美国非农就业公布（6月数据）",
+      "note": "美国劳工统计局公布6月非农就业报告，独立日假期，提前至周四发布。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-07-14",
+      "category": "cpi",
+      "title": "美国CPI公布（6月数据）",
+      "note": "美国劳工统计局公布6月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-07-29",
+      "category": "fed",
+      "title": "美联储按兵不动、三人反对要求加息",
+      "note": "维持3.50%-3.75%，三人反对主张加息25基点，为2016年9月以来首次三人同时鹰派反对，直接预示9月加息。",
+      "source": "Standard Chartered"
+    },
+    {
+      "date": "2026-08-07",
+      "category": "nfp",
+      "title": "美国非农就业公布（7月数据）",
+      "note": "美国劳工统计局公布7月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-08-12",
+      "category": "cpi",
+      "title": "美国CPI公布（7月数据）",
+      "note": "美国劳工统计局公布7月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-09-04",
+      "category": "nfp",
+      "title": "美国非农就业公布（8月数据）",
+      "note": "美国劳工统计局公布8月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-09-11",
+      "category": "cpi",
+      "title": "美国CPI公布（8月数据）",
+      "note": "美国劳工统计局公布8月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-09-16",
+      "category": "fed",
+      "title": "美联储加息25基点、三年多来首次加息",
+      "note": "加息25基点至3.75%-4.00%，为2023年7月以来首次加息，声明称通胀仍高企。",
+      "source": "Federal Reserve"
+    },
+    {
+      "date": "2026-10-02",
+      "category": "nfp",
+      "title": "美国非农就业公布（9月数据）",
+      "note": "美国劳工统计局公布9月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-10-14",
+      "category": "cpi",
+      "title": "美国CPI公布（9月数据）",
+      "note": "美国劳工统计局公布9月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-10-28",
+      "category": "fed",
+      "title": "美联储按兵不动、两人反对要求再加息",
+      "note": "维持3.75%-4.00%，两人反对主张再加息25基点，声明称经济强劲扩张、通胀仍高企，市场大幅定价12月加息。",
+      "source": "petersworld.org"
+    },
+    {
+      "date": "2026-11-03",
+      "category": "election",
+      "title": "美国中期选举：民主党夺回国会两院",
+      "note": "投票日，次日路透社与美联社判定民主党赢得参众两院多数，终结共和党统一控制，特朗普最后两年将面对分裂政府。",
+      "source": "Reuters / AP"
+    },
+    {
+      "date": "2026-11-06",
+      "category": "nfp",
+      "title": "美国非农就业公布（10月数据）",
+      "note": "美国劳工统计局公布10月非农就业报告。",
+      "source": "BLS release schedule"
+    },
+    {
+      "date": "2026-11-10",
+      "category": "cpi",
+      "title": "美国CPI公布（10月数据）",
+      "note": "美国劳工统计局公布10月消费者价格指数（CPI）。",
+      "source": "BLS release schedule"
+    }
+  ]
+}

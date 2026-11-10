@@ -1,0 +1,132 @@
+{
+  "range": {
+    "start": "2023-11-10",
+    "end": "2026-11-10"
+  },
+  "source": "Yahoo Finance chart API",
+  "fetched_at": "2026-11-10T10:18:01.821853+00:00",
+  "symbols": {
+    "sp500": {
+      "symbol": "^GSPC",
+      "name": "标普500",
+      "rows": 751,
+      "first": "2023-11-10",
+      "last": "2026-11-09",
+      "file": "data/sp500.json"
+    },
+    "nasdaq": {
+      "symbol": "^IXIC",
+      "name": "纳斯达克",
+      "rows": 751,
+      "first": "2023-11-10",
+      "last": "2026-11-09",
+      "file": "data/nasdaq.json"
+    },
+    "dow": {
+      "symbol": "^DJI",
+      "name": "道琼斯",
+      "rows": 751,
+      "first": "2023-11-10",
+      "last": "2026-11-09",
+      "file": "data/dow.json"
+    },
+    "nikkei": {
+      "symbol": "^N225",
+      "name": "日经225",
+      "rows": 730,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/nikkei.json"
+    },
+    "hsi": {
+      "symbol": "^HSI",
+      "name": "恒生指数",
+      "rows": 737,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/hsi.json"
+    },
+    "sse": {
+      "symbol": "000001.SS",
+      "name": "上证指数",
+      "rows": 726,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/sse.json"
+    },
+    "gold": {
+      "symbol": "GC=F",
+      "name": "黄金期货",
+      "rows": 755,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/gold.json"
+    },
+    "dxy": {
+      "symbol": "DX-Y.NYB",
+      "name": "美元指数",
+      "rows": 754,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/dxy.json"
+    },
+    "usdcny": {
+      "symbol": "CNY=X",
+      "name": "美元/人民币",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/usdcny.json"
+    },
+    "usdjpy": {
+      "symbol": "JPY=X",
+      "name": "美元/日元",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/usdjpy.json"
+    },
+    "eurusd": {
+      "symbol": "EURUSD=X",
+      "name": "欧元/美元",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/eurusd.json"
+    },
+    "gbpusd": {
+      "symbol": "GBPUSD=X",
+      "name": "英镑/美元",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/gbpusd.json"
+    },
+    "usdhkd": {
+      "symbol": "HKD=X",
+      "name": "美元/港币",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/usdhkd.json"
+    },
+    "csi300": {
+      "symbol": "000300",
+      "name": "沪深300",
+      "rows": 726,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/csi300.json",
+      "source": "Eastmoney"
+    },
+    "cnyjpy": {
+      "symbol": "CNYJPY=X",
+      "name": "人民币/日元",
+      "rows": 778,
+      "first": "2023-11-10",
+      "last": "2026-11-10",
+      "file": "data/cnyjpy.json"
+    }
+  },
+  "last_update": "2026-11-10T10:25:09.335177+00:00"
+}
